@@ -1,0 +1,782 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import {
+  Send, Pin, Trash2, Hand, Smile, Plus, Upload, Download, X, Loader2,
+  Sparkles, Lock, Unlock, Eye, EyeOff, Radio, FileText, Users as UsersIcon,
+  ListChecks, ArrowLeft, MessageSquare, Video, NotebookPen, Wand2,
+} from "lucide-react";
+import { format, formatDistanceToNow } from "date-fns";
+import { toast } from "sonner";
+
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { LiveVideoRoom } from "./LiveVideoRoom";
+import { generateSessionSummary } from "@/lib/sessions.functions";
+
+const REACTIONS = ["🔥", "💡", "👍", "😵", "❓", "🎉"];
+
+type Session = {
+  id: string;
+  tutor_id: string;
+  title: string;
+  description: string | null;
+  status: string;
+  starts_at: string | null;
+  meeting_room_name: string;
+  locked: boolean;
+  focus_mode: boolean;
+  is_homework_help: boolean;
+};
+
+type Profile = { id: string; display_name: string | null; avatar_url: string | null };
+type Message = { id: string; user_id: string; content: string; pinned: boolean; created_at: string };
+type Resource = { id: string; title: string; kind: string; url: string | null; file_path: string | null; created_at: string };
+type Poll = { id: string; question: string; options: string[]; closed: boolean; created_at: string };
+type PollVote = { poll_id: string; user_id: string; option_index: number };
+type HandRaise = { id: string; user_id: string; raised_at: string; resolved_at: string | null };
+type Participant = { id: string; user_id: string; role: string; joined_at: string; left_at: string | null };
+
+export function SessionRoom({
+  session,
+  currentUserId,
+  myDisplayName,
+}: {
+  session: Session;
+  currentUserId: string;
+  myDisplayName: string;
+}) {
+  const navigate = useNavigate();
+  const isTutor = session.tutor_id === currentUserId;
+  const [lowBandwidth, setLowBandwidth] = useState(false);
+  const [activeTab, setActiveTab] = useState<"video" | "chat" | "notes" | "resources" | "polls" | "people" | "summary">(
+    "video",
+  );
+
+  // Auto-join as student
+  useEffect(() => {
+    if (isTutor) return;
+    supabase
+      .from("session_participants")
+      .upsert(
+        { session_id: session.id, user_id: currentUserId, role: "student" },
+        { onConflict: "session_id,user_id", ignoreDuplicates: true },
+      )
+      .then(({ error }) => {
+        if (error && !error.message.includes("duplicate")) console.warn(error);
+      });
+  }, [isTutor, session.id, currentUserId]);
+
+  const toggleLock = async () => {
+    const { error } = await supabase
+      .from("sessions")
+      .update({ locked: !session.locked })
+      .eq("id", session.id);
+    if (error) toast.error(error.message);
+    else toast.success(session.locked ? "Session unlocked" : "Session locked");
+  };
+
+  const toggleFocus = async () => {
+    const { error } = await supabase
+      .from("sessions")
+      .update({ focus_mode: !session.focus_mode })
+      .eq("id", session.id);
+    if (error) toast.error(error.message);
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="sticky top-0 z-40 border-b border-border/50 bg-background/80 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/dashboard" })} className="shrink-0">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div className="min-w-0">
+              <h1 className="truncate text-base font-semibold md:text-lg">{session.title}</h1>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Badge variant="outline" className="rounded-full capitalize">{session.status}</Badge>
+                {session.is_homework_help && <Badge variant="secondary" className="rounded-full">Homework</Badge>}
+                {session.locked && <Badge variant="destructive" className="rounded-full">Locked</Badge>}
+                {session.focus_mode && <Badge variant="secondary" className="rounded-full">Focus</Badge>}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="ghost" onClick={() => setLowBandwidth((v) => !v)} title="Low bandwidth mode">
+              {lowBandwidth ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </Button>
+            {isTutor && (
+              <>
+                <Button size="sm" variant="ghost" onClick={toggleFocus} title="Focus mode">
+                  <Radio className="h-4 w-4" />
+                </Button>
+                <Button size="sm" variant="ghost" onClick={toggleLock} title={session.locked ? "Unlock" : "Lock"}>
+                  {session.locked ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      </header>
+
+      <main className="mx-auto grid max-w-7xl gap-4 px-4 py-4 lg:grid-cols-[1fr_400px]">
+        {/* Left: video */}
+        <div className="min-h-[60vh] lg:sticky lg:top-20 lg:h-[calc(100vh-6rem)]">
+          <LiveVideoRoom sessionId={session.id} displayName={myDisplayName} lowBandwidth={lowBandwidth} />
+        </div>
+
+        {/* Right: tabs panel */}
+        <div className="rounded-2xl border border-border/60 bg-card lg:h-[calc(100vh-6rem)] lg:sticky lg:top-20">
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="flex h-full flex-col">
+            <TabsList className="m-3 grid grid-cols-6 rounded-full">
+              <TabsTrigger value="video" className="rounded-full" title="Live"><Video className="h-4 w-4" /></TabsTrigger>
+              <TabsTrigger value="chat" className="rounded-full" title="Chat"><MessageSquare className="h-4 w-4" /></TabsTrigger>
+              <TabsTrigger value="notes" className="rounded-full" title="Notes"><NotebookPen className="h-4 w-4" /></TabsTrigger>
+              <TabsTrigger value="resources" className="rounded-full" title="Resources"><FileText className="h-4 w-4" /></TabsTrigger>
+              <TabsTrigger value="polls" className="rounded-full" title="Polls"><ListChecks className="h-4 w-4" /></TabsTrigger>
+              <TabsTrigger value="people" className="rounded-full" title="People"><UsersIcon className="h-4 w-4" /></TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="video" className="flex-1 px-4 pb-4">
+              <SummaryPanel sessionId={session.id} isTutor={isTutor} />
+            </TabsContent>
+            <TabsContent value="chat" className="flex-1 overflow-hidden px-1 pb-3">
+              <ChatPanel sessionId={session.id} userId={currentUserId} isTutor={isTutor} />
+            </TabsContent>
+            <TabsContent value="notes" className="flex-1 overflow-hidden px-4 pb-3">
+              <NotesPanel sessionId={session.id} userId={currentUserId} />
+            </TabsContent>
+            <TabsContent value="resources" className="flex-1 overflow-hidden px-4 pb-3">
+              <ResourcesPanel sessionId={session.id} isTutor={isTutor} />
+            </TabsContent>
+            <TabsContent value="polls" className="flex-1 overflow-hidden px-4 pb-3">
+              <PollsPanel sessionId={session.id} userId={currentUserId} isTutor={isTutor} />
+            </TabsContent>
+            <TabsContent value="people" className="flex-1 overflow-hidden px-4 pb-3">
+              <PeoplePanel sessionId={session.id} userId={currentUserId} isTutor={isTutor} />
+            </TabsContent>
+          </Tabs>
+        </div>
+      </main>
+
+      {/* Reactions bar (fixed bottom) */}
+      <ReactionsBar sessionId={session.id} userId={currentUserId} />
+    </div>
+  );
+}
+
+/* ----------------------------- Chat panel ----------------------------- */
+function ChatPanel({ sessionId, userId, isTutor }: { sessionId: string; userId: string; isTutor: boolean }) {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [profiles, setProfiles] = useState<Record<string, Profile>>({});
+  const [text, setText] = useState("");
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const { data } = await supabase
+        .from("session_messages")
+        .select("id, user_id, content, pinned, created_at")
+        .eq("session_id", sessionId)
+        .order("created_at", { ascending: true })
+        .limit(200);
+      if (active && data) setMessages(data as Message[]);
+    })();
+
+    const ch = supabase
+      .channel(`chat-${sessionId}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "session_messages", filter: `session_id=eq.${sessionId}` }, (payload) => {
+        setMessages((m) => [...m, payload.new as Message]);
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "session_messages", filter: `session_id=eq.${sessionId}` }, (payload) => {
+        setMessages((m) => m.map((x) => (x.id === (payload.new as Message).id ? (payload.new as Message) : x)));
+      })
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "session_messages", filter: `session_id=eq.${sessionId}` }, (payload) => {
+        setMessages((m) => m.filter((x) => x.id !== (payload.old as { id: string }).id));
+      })
+      .subscribe();
+
+    return () => {
+      active = false;
+      supabase.removeChannel(ch);
+    };
+  }, [sessionId]);
+
+  // Lazy-load author profiles
+  useEffect(() => {
+    const missing = Array.from(new Set(messages.map((m) => m.user_id))).filter((id) => !profiles[id]);
+    if (missing.length === 0) return;
+    supabase
+      .from("profiles")
+      .select("id, display_name, avatar_url")
+      .in("id", missing)
+      .then(({ data }) => {
+        if (!data) return;
+        setProfiles((p) => ({ ...p, ...Object.fromEntries(data.map((x) => [x.id, x as Profile])) }));
+      });
+  }, [messages, profiles]);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  }, [messages.length]);
+
+  const send = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const body = text.trim();
+    if (!body) return;
+    setText("");
+    const { error } = await supabase
+      .from("session_messages")
+      .insert({ session_id: sessionId, user_id: userId, content: body });
+    if (error) toast.error(error.message);
+  };
+
+  const pinned = messages.filter((m) => m.pinned);
+
+  return (
+    <div className="flex h-full flex-col">
+      {pinned.length > 0 && (
+        <div className="mx-3 mb-2 rounded-xl border border-primary/20 bg-primary/5 p-2">
+          <div className="mb-1 flex items-center gap-1 text-[10px] font-semibold uppercase text-primary"><Pin className="h-3 w-3" /> Pinned</div>
+          {pinned.map((m) => (
+            <p key={m.id} className="text-xs">{m.content}</p>
+          ))}
+        </div>
+      )}
+
+      <div ref={scrollRef} className="flex-1 space-y-2 overflow-y-auto px-3">
+        {messages.map((m) => {
+          const author = profiles[m.user_id];
+          const mine = m.user_id === userId;
+          return (
+            <div key={m.id} className={`group flex gap-2 ${mine ? "flex-row-reverse" : ""}`}>
+              <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-brand-gradient text-[10px] font-semibold text-white">
+                {(author?.display_name ?? "?").slice(0, 1).toUpperCase()}
+              </div>
+              <div className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${mine ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+                {!mine && <p className="mb-0.5 text-[10px] font-semibold opacity-70">{author?.display_name ?? "…"}</p>}
+                <p className="whitespace-pre-wrap break-words">{m.content}</p>
+              </div>
+              {(isTutor || mine) && (
+                <div className="flex flex-col gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                  {isTutor && (
+                    <button title="Pin" onClick={() => supabase.from("session_messages").update({ pinned: !m.pinned }).eq("id", m.id)}>
+                      <Pin className="h-3 w-3 text-muted-foreground hover:text-primary" />
+                    </button>
+                  )}
+                  <button title="Delete" onClick={() => supabase.from("session_messages").delete().eq("id", m.id)}>
+                    <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+        {messages.length === 0 && (
+          <p className="py-10 text-center text-xs text-muted-foreground">No messages yet. Say hi 👋</p>
+        )}
+      </div>
+
+      <form onSubmit={send} className="m-3 flex gap-2">
+        <Input value={text} onChange={(e) => setText(e.target.value)} placeholder="Type a message…" />
+        <Button type="submit" size="icon" className="shrink-0 bg-brand-gradient text-white"><Send className="h-4 w-4" /></Button>
+      </form>
+    </div>
+  );
+}
+
+/* ----------------------------- Notes panel ---------------------------- */
+function NotesPanel({ sessionId, userId }: { sessionId: string; userId: string }) {
+  const [tab, setTab] = useState<"shared" | "private">("shared");
+  const [shared, setShared] = useState("");
+  const [privateText, setPrivateText] = useState("");
+  const [savingShared, setSavingShared] = useState(false);
+  const [savingPrivate, setSavingPrivate] = useState(false);
+  const sharedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const privateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    supabase.from("session_notes_shared").select("content").eq("session_id", sessionId).maybeSingle()
+      .then(({ data }) => setShared(data?.content ?? ""));
+    supabase.from("session_notes_private").select("content").eq("session_id", sessionId).eq("user_id", userId).maybeSingle()
+      .then(({ data }) => setPrivateText(data?.content ?? ""));
+
+    const ch = supabase
+      .channel(`notes-${sessionId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "session_notes_shared", filter: `session_id=eq.${sessionId}` }, (payload) => {
+        const next = payload.new as { content: string; updated_by?: string } | undefined;
+        if (next && next.updated_by !== userId) setShared(next.content);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [sessionId, userId]);
+
+  const onSharedChange = (v: string) => {
+    setShared(v);
+    if (sharedTimer.current) clearTimeout(sharedTimer.current);
+    sharedTimer.current = setTimeout(async () => {
+      setSavingShared(true);
+      await supabase.from("session_notes_shared")
+        .upsert({ session_id: sessionId, content: v, updated_by: userId, updated_at: new Date().toISOString() });
+      setSavingShared(false);
+    }, 600);
+  };
+
+  const onPrivateChange = (v: string) => {
+    setPrivateText(v);
+    if (privateTimer.current) clearTimeout(privateTimer.current);
+    privateTimer.current = setTimeout(async () => {
+      setSavingPrivate(true);
+      await supabase.from("session_notes_private")
+        .upsert({ session_id: sessionId, user_id: userId, content: v, updated_at: new Date().toISOString() });
+      setSavingPrivate(false);
+    }, 600);
+  };
+
+  return (
+    <div className="flex h-full flex-col">
+      <div className="mb-2 flex items-center justify-between">
+        <div className="inline-flex rounded-full bg-muted p-1 text-xs">
+          <button onClick={() => setTab("shared")} className={`rounded-full px-3 py-1 ${tab === "shared" ? "bg-background shadow-sm" : "text-muted-foreground"}`}>Shared</button>
+          <button onClick={() => setTab("private")} className={`rounded-full px-3 py-1 ${tab === "private" ? "bg-background shadow-sm" : "text-muted-foreground"}`}>Private</button>
+        </div>
+        <span className="text-[10px] text-muted-foreground">
+          {tab === "shared" ? (savingShared ? "Saving…" : "Auto-saves") : (savingPrivate ? "Saving…" : "Only you")}
+        </span>
+      </div>
+      {tab === "shared" ? (
+        <Textarea value={shared} onChange={(e) => onSharedChange(e.target.value)} placeholder="Collaborative class notes…" className="flex-1 resize-none" />
+      ) : (
+        <Textarea value={privateText} onChange={(e) => onPrivateChange(e.target.value)} placeholder="Your private notes (no one else sees these)…" className="flex-1 resize-none" />
+      )}
+    </div>
+  );
+}
+
+/* --------------------------- Resources panel -------------------------- */
+function ResourcesPanel({ sessionId, isTutor }: { sessionId: string; isTutor: boolean }) {
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [linkUrl, setLinkUrl] = useState("");
+  const [linkTitle, setLinkTitle] = useState("");
+  const [uploading, setUploading] = useState(false);
+
+  const load = async () => {
+    const { data } = await supabase
+      .from("session_resources")
+      .select("id, title, kind, url, file_path, created_at")
+      .eq("session_id", sessionId)
+      .order("created_at", { ascending: false });
+    setResources((data ?? []) as Resource[]);
+  };
+
+  useEffect(() => { load(); }, [sessionId]);
+
+  const onFile = async (file: File) => {
+    setUploading(true);
+    const path = `${sessionId}/${Date.now()}-${file.name}`;
+    const { error: upErr } = await supabase.storage.from("session-resources").upload(path, file);
+    if (upErr) { toast.error(upErr.message); setUploading(false); return; }
+    const { error: insErr } = await supabase.from("session_resources").insert({
+      session_id: sessionId,
+      uploaded_by: (await supabase.auth.getUser()).data.user!.id,
+      kind: "file",
+      title: file.name,
+      file_path: path,
+    });
+    if (insErr) toast.error(insErr.message);
+    else toast.success("Uploaded");
+    setUploading(false);
+    load();
+  };
+
+  const addLink = async () => {
+    if (!linkUrl.trim()) return;
+    const { error } = await supabase.from("session_resources").insert({
+      session_id: sessionId,
+      uploaded_by: (await supabase.auth.getUser()).data.user!.id,
+      kind: "link",
+      title: linkTitle.trim() || linkUrl,
+      url: linkUrl.trim(),
+    });
+    if (error) toast.error(error.message);
+    setLinkOpen(false); setLinkUrl(""); setLinkTitle("");
+    load();
+  };
+
+  const openResource = async (r: Resource) => {
+    if (r.url) window.open(r.url, "_blank");
+    else if (r.file_path) {
+      const { data } = await supabase.storage.from("session-resources").createSignedUrl(r.file_path, 3600);
+      if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+    }
+  };
+
+  return (
+    <div className="flex h-full flex-col">
+      {isTutor && (
+        <div className="mb-3 flex flex-wrap gap-2">
+          <label className="inline-flex">
+            <Button asChild size="sm" variant="outline" className="rounded-full" disabled={uploading}>
+              <span><Upload className="mr-1 h-3.5 w-3.5" /> {uploading ? "Uploading…" : "Upload file"}</span>
+            </Button>
+            <input type="file" hidden onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
+          </label>
+          <Button size="sm" variant="outline" className="rounded-full" onClick={() => setLinkOpen((v) => !v)}>
+            <Plus className="mr-1 h-3.5 w-3.5" /> Add link
+          </Button>
+        </div>
+      )}
+      {linkOpen && (
+        <div className="mb-3 space-y-2 rounded-xl border border-border p-3">
+          <Input placeholder="Title" value={linkTitle} onChange={(e) => setLinkTitle(e.target.value)} />
+          <Input placeholder="https://…" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} />
+          <div className="flex justify-end gap-2">
+            <Button size="sm" variant="ghost" onClick={() => setLinkOpen(false)}>Cancel</Button>
+            <Button size="sm" onClick={addLink} className="bg-brand-gradient text-white">Add</Button>
+          </div>
+        </div>
+      )}
+      <ScrollArea className="flex-1 pr-2">
+        {resources.length === 0 ? (
+          <p className="py-10 text-center text-xs text-muted-foreground">No resources yet.</p>
+        ) : (
+          <ul className="space-y-2">
+            {resources.map((r) => (
+              <li key={r.id} className="flex items-center gap-2 rounded-xl border border-border/60 p-2 text-sm hover:bg-accent/30">
+                <FileText className="h-4 w-4 text-muted-foreground" />
+                <button onClick={() => openResource(r)} className="flex-1 truncate text-left">{r.title}</button>
+                <button onClick={() => openResource(r)}><Download className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" /></button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </ScrollArea>
+    </div>
+  );
+}
+
+/* ------------------------------ Polls panel --------------------------- */
+function PollsPanel({ sessionId, userId, isTutor }: { sessionId: string; userId: string; isTutor: boolean }) {
+  const [polls, setPolls] = useState<Poll[]>([]);
+  const [votes, setVotes] = useState<PollVote[]>([]);
+  const [creating, setCreating] = useState(false);
+  const [q, setQ] = useState("");
+  const [opts, setOpts] = useState(["", ""]);
+
+  useEffect(() => {
+    const loadPolls = async () => {
+      const { data } = await supabase.from("session_polls").select("id, question, options, closed, created_at")
+        .eq("session_id", sessionId).order("created_at", { ascending: false });
+      setPolls((data ?? []).map((p) => ({ ...p, options: p.options as string[] })) as Poll[]);
+    };
+    const loadVotes = async () => {
+      const { data } = await supabase
+        .from("session_poll_votes")
+        .select("poll_id, user_id, option_index")
+        .in("poll_id", polls.map((p) => p.id).concat(["00000000-0000-0000-0000-000000000000"]));
+      setVotes((data ?? []) as PollVote[]);
+    };
+    loadPolls();
+    const ch = supabase
+      .channel(`polls-${sessionId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "session_polls", filter: `session_id=eq.${sessionId}` }, loadPolls)
+      .on("postgres_changes", { event: "*", schema: "public", table: "session_poll_votes" }, loadVotes)
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId]);
+
+  useEffect(() => {
+    if (polls.length === 0) { setVotes([]); return; }
+    supabase.from("session_poll_votes").select("poll_id, user_id, option_index")
+      .in("poll_id", polls.map((p) => p.id))
+      .then(({ data }) => setVotes((data ?? []) as PollVote[]));
+  }, [polls]);
+
+  const createPoll = async () => {
+    const cleaned = opts.map((o) => o.trim()).filter(Boolean);
+    if (!q.trim() || cleaned.length < 2) { toast.error("Add a question and at least 2 options"); return; }
+    const { error } = await supabase.from("session_polls").insert({
+      session_id: sessionId, created_by: userId, question: q.trim(), options: cleaned,
+    });
+    if (error) { toast.error(error.message); return; }
+    setQ(""); setOpts(["", ""]); setCreating(false);
+  };
+
+  const vote = async (pollId: string, idx: number) => {
+    const { error } = await supabase.from("session_poll_votes").insert({ poll_id: pollId, user_id: userId, option_index: idx });
+    if (error) toast.error(error.message.includes("duplicate") ? "You already voted" : error.message);
+  };
+
+  return (
+    <div className="flex h-full flex-col">
+      {isTutor && (
+        <div className="mb-3">
+          {creating ? (
+            <div className="space-y-2 rounded-xl border border-border p-3">
+              <Input placeholder="Question" value={q} onChange={(e) => setQ(e.target.value)} />
+              {opts.map((opt, i) => (
+                <Input key={i} placeholder={`Option ${i + 1}`} value={opt}
+                  onChange={(e) => setOpts(opts.map((o, j) => j === i ? e.target.value : o))} />
+              ))}
+              <div className="flex justify-between">
+                <Button size="sm" variant="ghost" onClick={() => setOpts([...opts, ""])}>+ Option</Button>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="ghost" onClick={() => setCreating(false)}>Cancel</Button>
+                  <Button size="sm" onClick={createPoll} className="bg-brand-gradient text-white">Launch</Button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <Button size="sm" onClick={() => setCreating(true)} className="rounded-full bg-brand-gradient text-white">
+              <Plus className="mr-1 h-3.5 w-3.5" /> New poll
+            </Button>
+          )}
+        </div>
+      )}
+      <ScrollArea className="flex-1 pr-2">
+        {polls.length === 0 ? (
+          <p className="py-10 text-center text-xs text-muted-foreground">No polls yet.</p>
+        ) : (
+          <ul className="space-y-3">
+            {polls.map((p) => {
+              const pollVotes = votes.filter((v) => v.poll_id === p.id);
+              const myVote = pollVotes.find((v) => v.user_id === userId);
+              const total = pollVotes.length;
+              return (
+                <li key={p.id} className="rounded-xl border border-border/60 p-3">
+                  <p className="text-sm font-semibold">{p.question}</p>
+                  <div className="mt-2 space-y-1.5">
+                    {p.options.map((opt, idx) => {
+                      const count = pollVotes.filter((v) => v.option_index === idx).length;
+                      const pct = total ? Math.round((count / total) * 100) : 0;
+                      const picked = myVote?.option_index === idx;
+                      return (
+                        <button
+                          key={idx}
+                          disabled={!!myVote}
+                          onClick={() => vote(p.id, idx)}
+                          className={`relative w-full overflow-hidden rounded-lg border px-3 py-1.5 text-left text-xs transition ${picked ? "border-primary bg-primary/10" : "border-border hover:bg-accent/30"} ${myVote ? "cursor-default" : ""}`}
+                        >
+                          {myVote && (
+                            <div className="absolute inset-y-0 left-0 bg-primary/15" style={{ width: `${pct}%` }} />
+                          )}
+                          <span className="relative flex justify-between"><span>{opt}</span>{myVote && <span className="text-muted-foreground">{pct}%</span>}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="mt-2 text-[10px] text-muted-foreground">{total} {total === 1 ? "vote" : "votes"}</p>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </ScrollArea>
+    </div>
+  );
+}
+
+/* ----------------------------- People panel --------------------------- */
+function PeoplePanel({ sessionId, userId, isTutor }: { sessionId: string; userId: string; isTutor: boolean }) {
+  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [profiles, setProfiles] = useState<Record<string, Profile>>({});
+  const [hands, setHands] = useState<HandRaise[]>([]);
+
+  useEffect(() => {
+    const loadParts = async () => {
+      const { data } = await supabase.from("session_participants")
+        .select("id, user_id, role, joined_at, left_at")
+        .eq("session_id", sessionId).order("joined_at");
+      setParticipants((data ?? []) as Participant[]);
+    };
+    const loadHands = async () => {
+      const { data } = await supabase.from("hand_raises")
+        .select("id, user_id, raised_at, resolved_at")
+        .eq("session_id", sessionId).is("resolved_at", null);
+      setHands((data ?? []) as HandRaise[]);
+    };
+    loadParts(); loadHands();
+    const ch = supabase
+      .channel(`people-${sessionId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "session_participants", filter: `session_id=eq.${sessionId}` }, loadParts)
+      .on("postgres_changes", { event: "*", schema: "public", table: "hand_raises", filter: `session_id=eq.${sessionId}` }, loadHands)
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [sessionId]);
+
+  useEffect(() => {
+    const ids = Array.from(new Set(participants.map((p) => p.user_id))).filter((id) => !profiles[id]);
+    if (ids.length === 0) return;
+    supabase.from("profiles").select("id, display_name, avatar_url").in("id", ids).then(({ data }) => {
+      if (data) setProfiles((p) => ({ ...p, ...Object.fromEntries(data.map((x) => [x.id, x as Profile])) }));
+    });
+  }, [participants, profiles]);
+
+  const myHand = hands.find((h) => h.user_id === userId);
+  const raiseHand = async () => {
+    if (myHand) {
+      await supabase.from("hand_raises").update({ resolved_at: new Date().toISOString() }).eq("id", myHand.id);
+    } else {
+      await supabase.from("hand_raises").insert({ session_id: sessionId, user_id: userId });
+    }
+  };
+  const resolveHand = async (id: string) => {
+    await supabase.from("hand_raises").update({ resolved_at: new Date().toISOString() }).eq("id", id);
+  };
+
+  return (
+    <div className="flex h-full flex-col">
+      <Button onClick={raiseHand} size="sm" variant={myHand ? "default" : "outline"}
+        className={`mb-3 rounded-full ${myHand ? "bg-brand-gradient text-white" : ""}`}>
+        <Hand className="mr-1 h-3.5 w-3.5" /> {myHand ? "Lower hand" : "Raise hand"}
+      </Button>
+
+      {hands.length > 0 && (
+        <div className="mb-3 rounded-xl border border-primary/20 bg-primary/5 p-2">
+          <p className="mb-1 text-[10px] font-semibold uppercase text-primary">Hand raise queue</p>
+          <ul className="space-y-1">
+            {hands.map((h) => (
+              <li key={h.id} className="flex items-center justify-between text-xs">
+                <span>{profiles[h.user_id]?.display_name ?? "…"}</span>
+                <span className="text-muted-foreground">{formatDistanceToNow(new Date(h.raised_at), { addSuffix: true })}</span>
+                {isTutor && <button onClick={() => resolveHand(h.id)}><X className="h-3 w-3" /></button>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <ScrollArea className="flex-1 pr-2">
+        <ul className="space-y-1.5">
+          {participants.map((p) => {
+            const prof = profiles[p.user_id];
+            return (
+              <li key={p.id} className="flex items-center gap-2 rounded-lg p-1.5 text-sm hover:bg-accent/30">
+                <div className="grid h-7 w-7 place-items-center rounded-full bg-brand-gradient text-[10px] font-semibold text-white">
+                  {(prof?.display_name ?? "?").slice(0, 1).toUpperCase()}
+                </div>
+                <span className="flex-1 truncate">{prof?.display_name ?? "…"}</span>
+                {p.role === "tutor" && <Badge variant="secondary" className="rounded-full text-[10px]">Tutor</Badge>}
+              </li>
+            );
+          })}
+        </ul>
+      </ScrollArea>
+    </div>
+  );
+}
+
+/* --------------------------- Summary tab (AI) ------------------------- */
+function SummaryPanel({ sessionId, isTutor }: { sessionId: string; isTutor: boolean }) {
+  const generate = useServerFn(generateSessionSummary);
+  const [loading, setLoading] = useState(false);
+  const [summary, setSummary] = useState<{ summary: string; key_points: string[]; confused_topics: string[] } | null>(null);
+
+  useEffect(() => {
+    supabase.from("ai_session_summaries").select("summary, key_points, confused_topics").eq("session_id", sessionId).maybeSingle()
+      .then(({ data }) => { if (data) setSummary(data); });
+  }, [sessionId]);
+
+  const onGen = async () => {
+    setLoading(true);
+    try {
+      const out = await generate({ data: { sessionId } });
+      setSummary(out);
+      toast.success("Summary ready");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to generate");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex h-full flex-col overflow-hidden">
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="flex items-center gap-1.5 text-sm font-semibold"><Sparkles className="h-3.5 w-3.5 text-primary" /> Session intel</h3>
+        {isTutor && (
+          <Button size="sm" variant="outline" className="rounded-full" onClick={onGen} disabled={loading}>
+            {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><Wand2 className="mr-1 h-3.5 w-3.5" />{summary ? "Regenerate" : "Generate AI summary"}</>}
+          </Button>
+        )}
+      </div>
+      <ScrollArea className="flex-1">
+        {!summary ? (
+          <p className="py-10 text-center text-xs text-muted-foreground">No summary yet. {isTutor ? "Generate one after the session." : "The tutor will generate one."}</p>
+        ) : (
+          <div className="space-y-4 text-sm">
+            <p className="leading-relaxed text-muted-foreground">{summary.summary}</p>
+            {summary.key_points.length > 0 && (
+              <div>
+                <h4 className="mb-1 text-xs font-semibold uppercase text-primary">Key points</h4>
+                <ul className="space-y-1 text-sm">
+                  {summary.key_points.map((k, i) => <li key={i}>• {k}</li>)}
+                </ul>
+              </div>
+            )}
+            {summary.confused_topics.length > 0 && (
+              <div>
+                <h4 className="mb-1 text-xs font-semibold uppercase text-amber-600">Topics learners struggled with</h4>
+                <ul className="space-y-1 text-sm">
+                  {summary.confused_topics.map((k, i) => <li key={i}>• {k}</li>)}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+      </ScrollArea>
+    </div>
+  );
+}
+
+/* --------------------------- Reactions bar ---------------------------- */
+function ReactionsBar({ sessionId, userId }: { sessionId: string; userId: string }) {
+  const [recent, setRecent] = useState<{ id: string; emoji: string }[]>([]);
+
+  useEffect(() => {
+    const ch = supabase
+      .channel(`reactions-${sessionId}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "session_reactions", filter: `session_id=eq.${sessionId}` }, (payload) => {
+        const r = payload.new as { id: string; emoji: string };
+        setRecent((cur) => [...cur, r]);
+        setTimeout(() => setRecent((cur) => cur.filter((x) => x.id !== r.id)), 2500);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [sessionId]);
+
+  const react = (emoji: string) => {
+    supabase.from("session_reactions").insert({ session_id: sessionId, user_id: userId, emoji });
+  };
+
+  return (
+    <>
+      {/* Floating reactions */}
+      <div className="pointer-events-none fixed bottom-24 left-1/2 z-30 -translate-x-1/2">
+        <div className="flex gap-1">
+          {recent.map((r) => (
+            <span key={r.id} className="animate-bounce text-2xl">{r.emoji}</span>
+          ))}
+        </div>
+      </div>
+      {/* Reaction bar */}
+      <div className="fixed bottom-4 left-1/2 z-30 flex -translate-x-1/2 gap-1 rounded-full border border-border bg-background/90 p-1.5 shadow-soft backdrop-blur">
+        {REACTIONS.map((e) => (
+          <button key={e} onClick={() => react(e)} className="rounded-full px-2 py-1 text-lg hover:bg-accent">
+            {e}
+          </button>
+        ))}
+      </div>
+    </>
+  );
+}
