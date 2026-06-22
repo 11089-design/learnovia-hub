@@ -39,7 +39,7 @@ function ExplorePage() {
     (async () => {
       let q = supabase
         .from("sessions")
-        .select("id, title, description, format, kind, price_cents, language, max_participants, starts_at, is_homework_help, status, category:categories(name, slug), tutor:profiles!sessions_tutor_id_fkey(display_name, avatar_url)")
+        .select("id, tutor_id, title, description, format, kind, price_cents, language, max_participants, starts_at, is_homework_help, status, category:categories(name, slug)")
         .neq("status", "ended")
         .neq("status", "cancelled")
         .order("starts_at", { ascending: true, nullsFirst: false })
@@ -47,13 +47,20 @@ function ExplorePage() {
       if (kind !== "all") q = q.eq("kind", kind);
       if (hwOnly) q = q.eq("is_homework_help", true);
       const { data } = await q;
-      let result = (data ?? []) as unknown as SessionListItem[];
-      if (catSlug) result = result.filter((s) => s.category?.slug === catSlug);
+      let rows = (data ?? []) as Array<SessionListItem & { tutor_id: string }>;
+      if (catSlug) rows = rows.filter((s) => s.category?.slug === catSlug);
       if (query.trim()) {
         const needle = query.toLowerCase();
-        result = result.filter((s) => s.title.toLowerCase().includes(needle) || (s.description ?? "").toLowerCase().includes(needle));
+        rows = rows.filter((s) => s.title.toLowerCase().includes(needle) || (s.description ?? "").toLowerCase().includes(needle));
       }
-      setSessions(result);
+      // Fetch tutor profiles in a single batch
+      const tutorIds = Array.from(new Set(rows.map((r) => r.tutor_id)));
+      const tutors: Record<string, { display_name: string | null; avatar_url: string | null }> = {};
+      if (tutorIds.length > 0) {
+        const { data: profs } = await supabase.from("profiles").select("id, display_name, avatar_url").in("id", tutorIds);
+        for (const p of profs ?? []) tutors[p.id] = { display_name: p.display_name, avatar_url: p.avatar_url };
+      }
+      setSessions(rows.map((r) => ({ ...r, tutor: tutors[r.tutor_id] ?? null })));
     })();
   }, [catSlug, kind, hwOnly, query]);
 
