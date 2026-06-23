@@ -24,6 +24,7 @@ import { Route as AuthenticatedSessionsSessionIdRouteImport } from './routes/_au
 import { Route as AuthenticatedMessagesThreadIdRouteImport } from './routes/_authenticated/messages/$threadId'
 import { Route as AuthenticatedCommunitiesNewRouteImport } from './routes/_authenticated/communities/new'
 import { Route as AuthenticatedCommunitiesSlugRouteImport } from './routes/_authenticated/communities/$slug'
+import { Route as AuthenticatedSessionsSessionIdRoomRouteImport } from './routes/_authenticated/sessions/$sessionId.room'
 
 const SafetyRoute = SafetyRouteImport.update({
   id: '/safety',
@@ -105,6 +106,12 @@ const AuthenticatedCommunitiesSlugRoute =
     path: '/communities/$slug',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSessionsSessionIdRoomRoute =
+  AuthenticatedSessionsSessionIdRoomRouteImport.update({
+    id: '/room',
+    path: '/room',
+    getParentRoute: () => AuthenticatedSessionsSessionIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -118,9 +125,10 @@ export interface FileRoutesByFullPath {
   '/communities/$slug': typeof AuthenticatedCommunitiesSlugRoute
   '/communities/new': typeof AuthenticatedCommunitiesNewRoute
   '/messages/$threadId': typeof AuthenticatedMessagesThreadIdRoute
-  '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
+  '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRouteWithChildren
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
   '/messages/': typeof AuthenticatedMessagesIndexRoute
+  '/sessions/$sessionId/room': typeof AuthenticatedSessionsSessionIdRoomRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -134,9 +142,10 @@ export interface FileRoutesByTo {
   '/communities/$slug': typeof AuthenticatedCommunitiesSlugRoute
   '/communities/new': typeof AuthenticatedCommunitiesNewRoute
   '/messages/$threadId': typeof AuthenticatedMessagesThreadIdRoute
-  '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
+  '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRouteWithChildren
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
   '/messages': typeof AuthenticatedMessagesIndexRoute
+  '/sessions/$sessionId/room': typeof AuthenticatedSessionsSessionIdRoomRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -152,9 +161,10 @@ export interface FileRoutesById {
   '/_authenticated/communities/$slug': typeof AuthenticatedCommunitiesSlugRoute
   '/_authenticated/communities/new': typeof AuthenticatedCommunitiesNewRoute
   '/_authenticated/messages/$threadId': typeof AuthenticatedMessagesThreadIdRoute
-  '/_authenticated/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
+  '/_authenticated/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRouteWithChildren
   '/_authenticated/sessions/new': typeof AuthenticatedSessionsNewRoute
   '/_authenticated/messages/': typeof AuthenticatedMessagesIndexRoute
+  '/_authenticated/sessions/$sessionId/room': typeof AuthenticatedSessionsSessionIdRoomRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -173,6 +183,7 @@ export interface FileRouteTypes {
     | '/sessions/$sessionId'
     | '/sessions/new'
     | '/messages/'
+    | '/sessions/$sessionId/room'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -189,6 +200,7 @@ export interface FileRouteTypes {
     | '/sessions/$sessionId'
     | '/sessions/new'
     | '/messages'
+    | '/sessions/$sessionId/room'
   id:
     | '__root__'
     | '/'
@@ -206,6 +218,7 @@ export interface FileRouteTypes {
     | '/_authenticated/sessions/$sessionId'
     | '/_authenticated/sessions/new'
     | '/_authenticated/messages/'
+    | '/_authenticated/sessions/$sessionId/room'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -324,8 +337,30 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCommunitiesSlugRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/sessions/$sessionId/room': {
+      id: '/_authenticated/sessions/$sessionId/room'
+      path: '/room'
+      fullPath: '/sessions/$sessionId/room'
+      preLoaderRoute: typeof AuthenticatedSessionsSessionIdRoomRouteImport
+      parentRoute: typeof AuthenticatedSessionsSessionIdRoute
+    }
   }
 }
+
+interface AuthenticatedSessionsSessionIdRouteChildren {
+  AuthenticatedSessionsSessionIdRoomRoute: typeof AuthenticatedSessionsSessionIdRoomRoute
+}
+
+const AuthenticatedSessionsSessionIdRouteChildren: AuthenticatedSessionsSessionIdRouteChildren =
+  {
+    AuthenticatedSessionsSessionIdRoomRoute:
+      AuthenticatedSessionsSessionIdRoomRoute,
+  }
+
+const AuthenticatedSessionsSessionIdRouteWithChildren =
+  AuthenticatedSessionsSessionIdRoute._addFileChildren(
+    AuthenticatedSessionsSessionIdRouteChildren,
+  )
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
@@ -334,7 +369,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCommunitiesSlugRoute: typeof AuthenticatedCommunitiesSlugRoute
   AuthenticatedCommunitiesNewRoute: typeof AuthenticatedCommunitiesNewRoute
   AuthenticatedMessagesThreadIdRoute: typeof AuthenticatedMessagesThreadIdRoute
-  AuthenticatedSessionsSessionIdRoute: typeof AuthenticatedSessionsSessionIdRoute
+  AuthenticatedSessionsSessionIdRoute: typeof AuthenticatedSessionsSessionIdRouteWithChildren
   AuthenticatedSessionsNewRoute: typeof AuthenticatedSessionsNewRoute
   AuthenticatedMessagesIndexRoute: typeof AuthenticatedMessagesIndexRoute
 }
@@ -346,7 +381,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCommunitiesSlugRoute: AuthenticatedCommunitiesSlugRoute,
   AuthenticatedCommunitiesNewRoute: AuthenticatedCommunitiesNewRoute,
   AuthenticatedMessagesThreadIdRoute: AuthenticatedMessagesThreadIdRoute,
-  AuthenticatedSessionsSessionIdRoute: AuthenticatedSessionsSessionIdRoute,
+  AuthenticatedSessionsSessionIdRoute:
+    AuthenticatedSessionsSessionIdRouteWithChildren,
   AuthenticatedSessionsNewRoute: AuthenticatedSessionsNewRoute,
   AuthenticatedMessagesIndexRoute: AuthenticatedMessagesIndexRoute,
 }
@@ -365,13 +401,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
