@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft, Calendar, Clock, Globe, Loader2, Lock, MessageSquare,
-  Send, Star, Users, Video, HelpCircle, Sparkles, CheckCircle2,
+  Send, Star, Users, Video, HelpCircle, Sparkles, CheckCircle2, Pencil,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -209,7 +209,11 @@ function SessionDetailPage() {
                 {tutor && (
                   <section>
                     <h2 className="mb-3 text-lg font-semibold">Meet your tutor</h2>
-                    <div className="glass flex items-start gap-4 rounded-2xl p-5">
+                    <Link
+                      to="/users/$userId"
+                      params={{ userId: tutor.id }}
+                      className="glass group flex items-start gap-4 rounded-2xl p-5 transition hover:-translate-y-0.5 hover:shadow-lg"
+                    >
                       {tutor.avatar_url ? (
                         <img src={tutor.avatar_url} alt={tutor.display_name ?? "Tutor"} className="h-16 w-16 rounded-full object-cover" />
                       ) : (
@@ -218,14 +222,15 @@ function SessionDetailPage() {
                         </div>
                       )}
                       <div className="min-w-0 flex-1">
-                        <h3 className="text-lg font-semibold">{tutor.display_name ?? "Anonymous tutor"}</h3>
+                        <h3 className="text-lg font-semibold group-hover:gradient-text">{tutor.display_name ?? "Anonymous tutor"}</h3>
                         <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                           <span className="inline-flex items-center gap-1"><Star className="h-3 w-3 fill-current text-yellow-500" /> {tutor.avg_rating > 0 ? tutor.avg_rating.toFixed(1) : "New"}</span>
                           <span className="inline-flex items-center gap-1"><Sparkles className="h-3 w-3" /> {tutor.free_sessions_taught} session{tutor.free_sessions_taught === 1 ? "" : "s"} taught</span>
                         </div>
-                        {tutor.bio && <p className="mt-2 text-sm text-foreground/80">{tutor.bio}</p>}
+                        {tutor.bio && <p className="mt-2 line-clamp-3 text-sm text-foreground/80">{tutor.bio}</p>}
+                        <p className="mt-2 text-xs text-primary">View full profile →</p>
                       </div>
-                    </div>
+                    </Link>
                   </section>
                 )}
               </TabsContent>
@@ -256,11 +261,21 @@ function SessionDetailPage() {
               </div>
 
               {isTutor ? (
-                <Link to="/sessions/$sessionId/room" params={{ sessionId: session.id }}>
-                  <Button className="w-full rounded-full bg-brand-gradient text-white">
-                    <Video className="mr-1 h-4 w-4" /> Enter your room
+                <div className="space-y-2">
+                  <Link to="/sessions/$sessionId/room" params={{ sessionId: session.id }}>
+                    <Button className="w-full rounded-full bg-brand-gradient text-white">
+                      <Video className="mr-1 h-4 w-4" /> Enter your room
+                    </Button>
+                  </Link>
+                  <Link to="/sessions/$sessionId/edit" params={{ sessionId: session.id }}>
+                    <Button variant="outline" className="w-full rounded-full">
+                      <Pencil className="mr-1 h-4 w-4" /> Edit session
+                    </Button>
+                  </Link>
+                  <Button variant="ghost" className="w-full rounded-full" onClick={() => setTab("chat")}>
+                    <MessageSquare className="mr-1 h-4 w-4" /> Group chat
                   </Button>
-                </Link>
+                </div>
               ) : enrolled ? (
                 <div className="space-y-2">
                   <Link to="/sessions/$sessionId/room" params={{ sessionId: session.id }}>
@@ -352,10 +367,26 @@ function GroupChat({ sessionId, userId }: { sessionId: string; userId: string })
     if (!body || sending) return;
     setSending(true);
     setText("");
-    const { error } = await supabase.from("session_messages")
-      .insert({ session_id: sessionId, user_id: userId, content: body });
+    // Optimistic
+    const tempId = `tmp-${Date.now()}`;
+    setMessages((m) => [...m, { id: tempId, user_id: userId, content: body, created_at: new Date().toISOString() }]);
+    const { data, error } = await supabase.from("session_messages")
+      .insert({ session_id: sessionId, user_id: userId, content: body })
+      .select("id, user_id, content, created_at")
+      .single();
     setSending(false);
-    if (error) { toast.error(error.message); setText(body); }
+    if (error) {
+      setMessages((m) => m.filter((x) => x.id !== tempId));
+      toast.error(error.message);
+      setText(body);
+      return;
+    }
+    // Replace temp with real (realtime may also fire; dedupe by id)
+    setMessages((m) => {
+      const withoutTemp = m.filter((x) => x.id !== tempId);
+      if (withoutTemp.some((x) => x.id === data.id)) return withoutTemp;
+      return [...withoutTemp, data as Message];
+    });
   };
 
   return (
