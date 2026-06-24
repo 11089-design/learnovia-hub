@@ -93,7 +93,7 @@ function EditSessionPage() {
       outcomes: outcomes.split("\n").map((s) => s.trim()).filter(Boolean),
       is_homework_help: hw,
       locked,
-      status,
+      status: status as "scheduled" | "live" | "ended" | "cancelled",
     }).eq("id", sessionId);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
