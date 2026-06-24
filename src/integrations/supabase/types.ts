@@ -384,6 +384,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          achievements: string[]
           age: number | null
           avatar_url: string | null
           avg_rating: number
@@ -395,14 +396,17 @@ export type Database = {
           full_name: string | null
           goals: string | null
           grade: string | null
+          headline: string | null
           id: string
           interests: string[]
           onboarded: boolean
           parent_consent: boolean
           role: Database["public"]["Enums"]["user_role"]
+          university: string | null
           updated_at: string
         }
         Insert: {
+          achievements?: string[]
           age?: number | null
           avatar_url?: string | null
           avg_rating?: number
@@ -414,14 +418,17 @@ export type Database = {
           full_name?: string | null
           goals?: string | null
           grade?: string | null
+          headline?: string | null
           id: string
           interests?: string[]
           onboarded?: boolean
           parent_consent?: boolean
           role?: Database["public"]["Enums"]["user_role"]
+          university?: string | null
           updated_at?: string
         }
         Update: {
+          achievements?: string[]
           age?: number | null
           avatar_url?: string | null
           avg_rating?: number
@@ -433,11 +440,13 @@ export type Database = {
           full_name?: string | null
           goals?: string | null
           grade?: string | null
+          headline?: string | null
           id?: string
           interests?: string[]
           onboarded?: boolean
           parent_consent?: boolean
           role?: Database["public"]["Enums"]["user_role"]
+          university?: string | null
           updated_at?: string
         }
         Relationships: []
