@@ -194,7 +194,8 @@ function ChatPanel({ sessionId, userId, isTutor }: { sessionId: string; userId: 
     const ch = supabase
       .channel(`chat-${sessionId}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "session_messages", filter: `session_id=eq.${sessionId}` }, (payload) => {
-        setMessages((m) => [...m, payload.new as Message]);
+        const incoming = payload.new as Message;
+        setMessages((m) => (m.some((x) => x.id === incoming.id) ? m : [...m, incoming]));
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "session_messages", filter: `session_id=eq.${sessionId}` }, (payload) => {
         setMessages((m) => m.map((x) => (x.id === (payload.new as Message).id ? (payload.new as Message) : x)));
@@ -233,10 +234,24 @@ function ChatPanel({ sessionId, userId, isTutor }: { sessionId: string; userId: 
     const body = text.trim();
     if (!body) return;
     setText("");
-    const { error } = await supabase
+    const tempId = `tmp-${Date.now()}`;
+    setMessages((m) => [...m, { id: tempId, user_id: userId, content: body, pinned: false, created_at: new Date().toISOString() }]);
+    const { data, error } = await supabase
       .from("session_messages")
-      .insert({ session_id: sessionId, user_id: userId, content: body });
-    if (error) toast.error(error.message);
+      .insert({ session_id: sessionId, user_id: userId, content: body })
+      .select("id, user_id, content, pinned, created_at")
+      .single();
+    if (error) {
+      setMessages((m) => m.filter((x) => x.id !== tempId));
+      toast.error(error.message);
+      setText(body);
+      return;
+    }
+    setMessages((m) => {
+      const without = m.filter((x) => x.id !== tempId);
+      if (without.some((x) => x.id === data.id)) return without;
+      return [...without, data as Message];
+    });
   };
 
   const pinned = messages.filter((m) => m.pinned);
@@ -378,7 +393,15 @@ function ResourcesPanel({ sessionId, isTutor }: { sessionId: string; isTutor: bo
     setResources((data ?? []) as Resource[]);
   };
 
-  useEffect(() => { load(); }, [sessionId]);
+  useEffect(() => {
+    load();
+    const ch = supabase
+      .channel(`resources-${sessionId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "session_resources", filter: `session_id=eq.${sessionId}` }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId]);
 
   const onFile = async (file: File) => {
     setUploading(true);
