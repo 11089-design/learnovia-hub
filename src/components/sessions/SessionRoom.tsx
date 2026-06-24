@@ -445,7 +445,9 @@ function ResourcesPanel({ sessionId, isTutor }: { sessionId: string; isTutor: bo
 
   return (
     <div className="flex h-full flex-col">
-      {isTutor && (
+      {(
+        // any participant can upload now
+        true) && (
         <div className="mb-3 flex flex-wrap gap-2">
           <label className="inline-flex">
             <Button asChild size="sm" variant="outline" className="rounded-full" disabled={uploading}>
