@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+import { ImageUploader } from "@/components/ImageUploader";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
   head: () => ({ meta: [{ title: "Welcome — Learnova" }] }),
@@ -34,6 +35,7 @@ export function OnboardingPage() {
   const [interests, setInterests] = useState<string[]>([]);
   const [goals, setGoals] = useState("");
   const [parentConsent, setParentConsent] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -41,7 +43,7 @@ export function OnboardingPage() {
       if (!userData.user) return;
       const { data } = await supabase
         .from("profiles")
-        .select("display_name, role, age, grade, interests, goals, parent_consent, onboarded")
+        .select("display_name, role, age, grade, interests, goals, parent_consent, onboarded, avatar_url")
         .eq("id", userData.user.id)
         .maybeSingle();
       if (data) {
@@ -56,6 +58,7 @@ export function OnboardingPage() {
         setInterests(data.interests ?? []);
         setGoals(data.goals ?? "");
         setParentConsent(data.parent_consent ?? false);
+        setAvatarUrl(data.avatar_url ?? null);
       }
     })();
   }, [navigate]);
@@ -94,6 +97,7 @@ export function OnboardingPage() {
           goals: goals.trim() || null,
           parent_consent: isUnder18 ? parentConsent : true,
           onboarded: true,
+          avatar_url: avatarUrl,
         })
         .eq("id", userData.user.id);
 
@@ -148,7 +152,11 @@ export function OnboardingPage() {
             <div className="space-y-4">
               <div>
                 <h1 className="text-2xl font-bold tracking-tight">Tell us about you</h1>
-                <p className="mt-1 text-sm text-muted-foreground">Your display name is what other students see.</p>
+                <p className="mt-1 text-sm text-muted-foreground">Your display name and photo are what other students see.</p>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Profile photo</Label>
+                <ImageUploader value={avatarUrl} onChange={setAvatarUrl} folder="avatars" shape="circle" />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="ob-name">Display name</Label>

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { ImageUploader } from "@/components/ImageUploader";
 
 export const Route = createFileRoute("/_authenticated/communities/new")({
   head: () => ({ meta: [{ title: "Start a community — Learnova" }] }),
@@ -21,6 +22,7 @@ function NewCommunityPage() {
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
@@ -32,7 +34,7 @@ function NewCommunityPage() {
       const slug = slugify(name) || Math.random().toString(36).slice(2, 8);
       const { data, error } = await supabase
         .from("communities")
-        .insert({ name: name.trim(), slug, description: description.trim() || null, created_by: u.user.id })
+        .insert({ name: name.trim(), slug, description: description.trim() || null, created_by: u.user.id, cover_url: coverUrl })
         .select("slug")
         .single();
       if (error) throw error;
@@ -66,6 +68,10 @@ function NewCommunityPage() {
           <div className="space-y-1.5">
             <Label htmlFor="desc">Description</Label>
             <Textarea id="desc" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What is this community about?" />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Cover image</Label>
+            <ImageUploader value={coverUrl} onChange={setCoverUrl} folder="communities" shape="wide" />
           </div>
           <Button type="submit" disabled={saving || !name.trim()} className="w-full rounded-full bg-brand-gradient text-white shadow-soft">
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create community"}

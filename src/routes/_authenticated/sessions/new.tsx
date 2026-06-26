@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+import { ImageUploader } from "@/components/ImageUploader";
 
 export const Route = createFileRoute("/_authenticated/sessions/new")({
   head: () => ({ meta: [{ title: "Host a session — Learnova" }] }),
@@ -35,6 +36,7 @@ function NewSessionPage() {
   const [endsAt, setEndsAt] = useState("");
   const [outcomes, setOutcomes] = useState("");
   const [hw, setHw] = useState(false);
+  const [coverUrl, setCoverUrl] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.from("categories").select("id, name, slug").order("name").then(({ data }) => setCategories(data ?? []));
@@ -67,6 +69,7 @@ function NewSessionPage() {
           ends_at: endsAt || null,
           outcomes: outcomes.split("\n").map((s) => s.trim()).filter(Boolean),
           is_homework_help: hw,
+          cover_url: coverUrl,
         })
         .select("id")
         .single();
@@ -187,6 +190,11 @@ function NewSessionPage() {
           <div className="space-y-1.5">
             <Label htmlFor="outcomes">Learning outcomes (one per line)</Label>
             <Textarea id="outcomes" rows={3} value={outcomes} onChange={(e) => setOutcomes(e.target.value)} placeholder={"Understand the chain rule\nSolve 5 practice problems"} />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Cover image</Label>
+            <ImageUploader value={coverUrl} onChange={setCoverUrl} folder="sessions" shape="wide" />
           </div>
 
           <Button type="submit" disabled={saving} className="w-full rounded-full bg-brand-gradient text-white shadow-soft">
