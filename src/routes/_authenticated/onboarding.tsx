@@ -152,7 +152,11 @@ export function OnboardingPage() {
             <div className="space-y-4">
               <div>
                 <h1 className="text-2xl font-bold tracking-tight">Tell us about you</h1>
-                <p className="mt-1 text-sm text-muted-foreground">Your display name is what other students see.</p>
+                <p className="mt-1 text-sm text-muted-foreground">Your display name and photo are what other students see.</p>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Profile photo</Label>
+                <ImageUploader value={avatarUrl} onChange={setAvatarUrl} folder="avatars" shape="circle" />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="ob-name">Display name</Label>
