@@ -124,6 +124,21 @@ function CommunityPage() {
               {community.description}
             </div>
           )}
+          {(role === "owner" || role === "mod") && (
+            <div className="rounded-2xl border border-border/60 bg-card p-3">
+              <p className="mb-2 text-[10px] font-semibold uppercase text-muted-foreground">Community cover</p>
+              <ImageUploader
+                value={community.cover_url}
+                onChange={async (url) => {
+                  const { error } = await supabase.from("communities").update({ cover_url: url }).eq("id", community.id);
+                  if (error) { toast.error(error.message); return; }
+                  setCommunity({ ...community, cover_url: url });
+                }}
+                folder="communities"
+                shape="wide"
+              />
+            </div>
+          )}
         </aside>
 
         {/* Main */}
