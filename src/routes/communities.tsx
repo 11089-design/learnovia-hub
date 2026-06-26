@@ -81,10 +81,6 @@ function CommunitiesPage() {
                   <p className="mt-3 text-xs text-muted-foreground"><Users className="mr-1 inline h-3 w-3" />{c.member_count} {c.member_count === 1 ? "member" : "members"}</p>
                 </div>
               </Link>
-                <h3 className="text-lg font-semibold group-hover:gradient-text">{c.name}</h3>
-                {c.description && <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{c.description}</p>}
-                <p className="mt-3 text-xs text-muted-foreground"><Users className="mr-1 inline h-3 w-3" />{c.member_count} {c.member_count === 1 ? "member" : "members"}</p>
-              </Link>
             ))}
           </div>
         )}
