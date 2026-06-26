@@ -77,9 +77,13 @@ function CommunityPage() {
             <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/communities" })}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-brand-gradient text-white">
-              {community.name.slice(0, 1).toUpperCase()}
-            </div>
+            {community.cover_url ? (
+              <img src={community.cover_url} alt="" className="h-9 w-9 rounded-xl object-cover" />
+            ) : (
+              <div className="grid h-9 w-9 place-items-center rounded-xl bg-brand-gradient text-white">
+                {community.name.slice(0, 1).toUpperCase()}
+              </div>
+            )}
             <div>
               <h1 className="text-lg font-semibold">{community.name}</h1>
               <p className="text-xs text-muted-foreground"><Users className="mr-1 inline h-3 w-3" />{community.member_count} members</p>
