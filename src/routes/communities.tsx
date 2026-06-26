@@ -65,11 +65,22 @@ function CommunitiesPage() {
                 key={c.id}
                 to="/communities/$slug"
                 params={{ slug: c.slug }}
-                className="glass group block overflow-hidden rounded-2xl p-5 shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-lg"
+                className="glass group block overflow-hidden rounded-2xl shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-lg"
               >
-                <div className="mb-3 grid h-12 w-12 place-items-center rounded-xl bg-brand-gradient text-lg font-bold text-white">
-                  {c.name.slice(0, 1).toUpperCase()}
+                {c.cover_url ? (
+                  <img src={c.cover_url} alt="" className="h-28 w-full object-cover" />
+                ) : (
+                  <div className="h-28 w-full bg-brand-gradient" />
+                )}
+                <div className="p-5">
+                  <div className="mb-3 -mt-10 grid h-12 w-12 place-items-center rounded-xl bg-brand-gradient text-lg font-bold text-white ring-4 ring-background">
+                    {c.name.slice(0, 1).toUpperCase()}
+                  </div>
+                  <h3 className="text-lg font-semibold group-hover:gradient-text">{c.name}</h3>
+                  {c.description && <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{c.description}</p>}
+                  <p className="mt-3 text-xs text-muted-foreground"><Users className="mr-1 inline h-3 w-3" />{c.member_count} {c.member_count === 1 ? "member" : "members"}</p>
                 </div>
+              </Link>
                 <h3 className="text-lg font-semibold group-hover:gradient-text">{c.name}</h3>
                 {c.description && <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{c.description}</p>}
                 <p className="mt-3 text-xs text-muted-foreground"><Users className="mr-1 inline h-3 w-3" />{c.member_count} {c.member_count === 1 ? "member" : "members"}</p>
