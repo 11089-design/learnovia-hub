@@ -8,13 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { ImageUploader } from "@/components/ImageUploader";
 
 export const Route = createFileRoute("/_authenticated/communities/$slug")({
   head: () => ({ meta: [{ title: "Community — Learnova" }] }),
   component: CommunityPage,
 });
 
-type Community = { id: string; slug: string; name: string; description: string | null; member_count: number; created_by: string };
+type Community = { id: string; slug: string; name: string; description: string | null; member_count: number; created_by: string; cover_url: string | null };
 type Channel = { id: string; name: string; kind: string; position: number };
 type Profile = { id: string; display_name: string | null };
 type ChannelMessage = { id: string; user_id: string; content: string; pinned: boolean; created_at: string };
@@ -29,20 +30,22 @@ function CommunityPage() {
   const [tab, setTab] = useState<"chat" | "posts">("chat");
   const [me, setMe] = useState<string | null>(null);
   const [isMember, setIsMember] = useState(false);
+  const [role, setRole] = useState<"owner" | "mod" | "member" | null>(null);
 
   useEffect(() => {
     (async () => {
       const { data: u } = await supabase.auth.getUser();
       if (u.user) setMe(u.user.id);
-      const { data: c } = await supabase.from("communities").select("id, slug, name, description, member_count, created_by").eq("slug", slug).maybeSingle();
+      const { data: c } = await supabase.from("communities").select("id, slug, name, description, member_count, created_by, cover_url").eq("slug", slug).maybeSingle();
       if (!c) return;
       setCommunity(c as Community);
       const { data: ch } = await supabase.from("community_channels").select("id, name, kind, position").eq("community_id", c.id).order("position");
       setChannels(ch ?? []);
       setActiveChannel(ch?.[0] ?? null);
       if (u.user) {
-        const { data: m } = await supabase.from("community_members").select("user_id").eq("community_id", c.id).eq("user_id", u.user.id).maybeSingle();
+        const { data: m } = await supabase.from("community_members").select("user_id, role").eq("community_id", c.id).eq("user_id", u.user.id).maybeSingle();
         setIsMember(!!m);
+        setRole((m?.role as "owner" | "mod" | "member") ?? null);
       }
     })();
   }, [slug]);
