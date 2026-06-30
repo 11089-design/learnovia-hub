@@ -18,6 +18,11 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { LiveVideoRoom } from "./LiveVideoRoom";
 import { generateSessionSummary } from "@/lib/sessions.functions";
+import { EmojiStickerPicker } from "@/components/chat/EmojiStickerPicker";
+import { MessageContent } from "@/components/chat/MessageContent";
+import { MessageReactions } from "@/components/chat/MessageReactions";
+import { checkProfanity, autoReportMessage } from "@/lib/profanity";
+import { toStickerMessage } from "@/lib/stickers";
 
 const REACTIONS = ["🔥", "💡", "👍", "😵", "❓", "🎉"];
 
@@ -229,11 +234,7 @@ function ChatPanel({ sessionId, userId, isTutor }: { sessionId: string; userId: 
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages.length]);
 
-  const send = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const body = text.trim();
-    if (!body) return;
-    setText("");
+  const sendBody = async (body: string) => {
     const tempId = `tmp-${Date.now()}`;
     setMessages((m) => [...m, { id: tempId, user_id: userId, content: body, pinned: false, created_at: new Date().toISOString() }]);
     const { data, error } = await supabase
@@ -244,14 +245,31 @@ function ChatPanel({ sessionId, userId, isTutor }: { sessionId: string; userId: 
     if (error) {
       setMessages((m) => m.filter((x) => x.id !== tempId));
       toast.error(error.message);
-      setText(body);
-      return;
+      return null;
     }
     setMessages((m) => {
       const without = m.filter((x) => x.id !== tempId);
       if (without.some((x) => x.id === data.id)) return without;
       return [...without, data as Message];
     });
+    return data as Message;
+  };
+
+  const send = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const raw = text.trim();
+    if (!raw) return;
+    setText("");
+    const { clean, flagged, matched } = checkProfanity(raw);
+    const sent = await sendBody(clean);
+    if (sent && flagged) {
+      toast.warning("Heads up: language was flagged and reported to mods.");
+      autoReportMessage({ reporterId: userId, targetKind: "session_message", targetId: sent.id, matched });
+    }
+  };
+
+  const sendSticker = async (id: string) => {
+    await sendBody(toStickerMessage(id));
   };
 
   const pinned = messages.filter((m) => m.pinned);
@@ -271,16 +289,22 @@ function ChatPanel({ sessionId, userId, isTutor }: { sessionId: string; userId: 
         {messages.map((m) => {
           const author = profiles[m.user_id];
           const mine = m.user_id === userId;
+          const isTemp = m.id.startsWith("tmp-");
           return (
             <div key={m.id} className={`group flex gap-2 ${mine ? "flex-row-reverse" : ""}`}>
               <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-brand-gradient text-[10px] font-semibold text-white">
                 {(author?.display_name ?? "?").slice(0, 1).toUpperCase()}
               </div>
-              <div className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${mine ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
-                {!mine && <p className="mb-0.5 text-[10px] font-semibold opacity-70">{author?.display_name ?? "…"}</p>}
-                <p className="whitespace-pre-wrap break-words">{m.content}</p>
+              <div className={`max-w-[75%] ${mine ? "items-end" : "items-start"} flex flex-col`}>
+                <div className={`rounded-2xl px-3 py-2 text-sm ${mine ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+                  {!mine && <p className="mb-0.5 text-[10px] font-semibold opacity-70">{author?.display_name ?? "…"}</p>}
+                  <MessageContent content={m.content} mine={mine} />
+                </div>
+                {!isTemp && (
+                  <MessageReactions targetKind="session_message" messageId={m.id} userId={userId} channelKey={sessionId} />
+                )}
               </div>
-              {(isTutor || mine) && (
+              {(isTutor || mine) && !isTemp && (
                 <div className="flex flex-col gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                   {isTutor && (
                     <button title="Pin" onClick={() => supabase.from("session_messages").update({ pinned: !m.pinned }).eq("id", m.id)}>
@@ -300,7 +324,12 @@ function ChatPanel({ sessionId, userId, isTutor }: { sessionId: string; userId: 
         )}
       </div>
 
-      <form onSubmit={send} className="m-3 flex gap-2">
+      <form onSubmit={send} className="m-3 flex items-center gap-2">
+        <EmojiStickerPicker
+          onPickEmoji={(e) => setText((t) => t + e)}
+          onPickSticker={(id) => sendSticker(id)}
+          align="start"
+        />
         <Input value={text} onChange={(e) => setText(e.target.value)} placeholder="Type a message…" />
         <Button type="submit" size="icon" className="shrink-0 bg-brand-gradient text-white"><Send className="h-4 w-4" /></Button>
       </form>

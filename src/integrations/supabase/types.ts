@@ -297,6 +297,63 @@ export type Database = {
           },
         ]
       }
+      community_resources: {
+        Row: {
+          channel_id: string | null
+          community_id: string
+          created_at: string
+          file_path: string | null
+          file_url: string
+          folder: string
+          id: string
+          mime_type: string | null
+          name: string
+          size_bytes: number | null
+          uploaded_by: string
+        }
+        Insert: {
+          channel_id?: string | null
+          community_id: string
+          created_at?: string
+          file_path?: string | null
+          file_url: string
+          folder?: string
+          id?: string
+          mime_type?: string | null
+          name: string
+          size_bytes?: number | null
+          uploaded_by: string
+        }
+        Update: {
+          channel_id?: string | null
+          community_id?: string
+          created_at?: string
+          file_path?: string | null
+          file_url?: string
+          folder?: string
+          id?: string
+          mime_type?: string | null
+          name?: string
+          size_bytes?: number | null
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_resources_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "community_channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_resources_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "communities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       direct_messages: {
         Row: {
           content: string
@@ -381,6 +438,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      message_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          message_id: string
+          target_kind: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          id?: string
+          message_id: string
+          target_kind: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          message_id?: string
+          target_kind?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
