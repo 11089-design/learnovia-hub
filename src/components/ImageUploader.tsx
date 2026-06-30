@@ -46,8 +46,10 @@ export function ImageUploader({
         contentType: file.type || "image/jpeg",
       });
       if (upErr) throw upErr;
-      const { data } = supabase.storage.from("media").getPublicUrl(path);
-      onChange(data.publicUrl);
+      // Bucket is private (workspace blocks public buckets), so issue a long-lived signed URL.
+      const { data, error: signErr } = await supabase.storage.from("media").createSignedUrl(path, 60 * 60 * 24 * 365);
+      if (signErr || !data?.signedUrl) throw signErr ?? new Error("Could not generate URL");
+      onChange(data.signedUrl);
       toast.success("Image uploaded");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Upload failed");
