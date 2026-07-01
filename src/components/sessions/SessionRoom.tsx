@@ -177,6 +177,16 @@ export function SessionRoom({
 
       {/* Reactions bar (fixed bottom) */}
       <ReactionsBar sessionId={session.id} userId={currentUserId} />
+
+      {!isTutor && (
+        <ExitReflection
+          open={reflectOpen}
+          onOpenChange={setReflectOpen}
+          sessionId={session.id}
+          userId={currentUserId}
+          onDone={() => { setReflectOpen(false); navigate({ to: "/dashboard" }); }}
+        />
+      )}
     </div>
   );
 }
