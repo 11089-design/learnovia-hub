@@ -72,7 +72,7 @@ Keep tone warm, Gen-Z friendly, concrete. No fluff.`,
     await supabase.from("study_plans").insert({
       user_id: userId,
       title: output.title,
-      plan: output as unknown as object,
+      plan: output as never,
       week_of: week,
     });
 
