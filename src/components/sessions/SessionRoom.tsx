@@ -103,7 +103,7 @@ export function SessionRoom({
       <header className="sticky top-0 z-40 border-b border-border/50 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3">
           <div className="flex items-center gap-3 min-w-0">
-            <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/dashboard" })} className="shrink-0">
+            <Button variant="ghost" size="sm" onClick={leave} className="shrink-0">
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div className="min-w-0">
