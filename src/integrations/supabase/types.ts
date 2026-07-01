@@ -843,6 +843,41 @@ export type Database = {
           },
         ]
       }
+      session_reflections: {
+        Row: {
+          created_at: string
+          id: string
+          learned: string
+          rating: number | null
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          learned: string
+          rating?: number | null
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          learned?: string
+          rating?: number | null
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_reflections_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       session_resources: {
         Row: {
           created_at: string
@@ -988,6 +1023,36 @@ export type Database = {
           longest_streak?: number
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      study_plans: {
+        Row: {
+          created_at: string
+          id: string
+          plan: Json
+          title: string
+          updated_at: string
+          user_id: string
+          week_of: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          plan: Json
+          title: string
+          updated_at?: string
+          user_id: string
+          week_of?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          plan?: Json
+          title?: string
+          updated_at?: string
+          user_id?: string
+          week_of?: string
         }
         Relationships: []
       }

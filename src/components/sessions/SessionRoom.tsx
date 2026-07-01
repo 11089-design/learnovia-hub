@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { LiveVideoRoom } from "./LiveVideoRoom";
+import { ExitReflection } from "./ExitReflection";
 import { generateSessionSummary } from "@/lib/sessions.functions";
 import { EmojiStickerPicker } from "@/components/chat/EmojiStickerPicker";
 import { MessageContent } from "@/components/chat/MessageContent";
@@ -59,9 +60,12 @@ export function SessionRoom({
   const navigate = useNavigate();
   const isTutor = session.tutor_id === currentUserId;
   const [lowBandwidth, setLowBandwidth] = useState(false);
+  const [reflectOpen, setReflectOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"video" | "chat" | "notes" | "resources" | "polls" | "people" | "summary">(
     "video",
   );
+
+  const leave = () => { if (isTutor) navigate({ to: "/dashboard" }); else setReflectOpen(true); };
 
   // Auto-join as student
   useEffect(() => {
@@ -99,7 +103,7 @@ export function SessionRoom({
       <header className="sticky top-0 z-40 border-b border-border/50 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3">
           <div className="flex items-center gap-3 min-w-0">
-            <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/dashboard" })} className="shrink-0">
+            <Button variant="ghost" size="sm" onClick={leave} className="shrink-0">
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div className="min-w-0">
@@ -173,6 +177,16 @@ export function SessionRoom({
 
       {/* Reactions bar (fixed bottom) */}
       <ReactionsBar sessionId={session.id} userId={currentUserId} />
+
+      {!isTutor && (
+        <ExitReflection
+          open={reflectOpen}
+          onOpenChange={setReflectOpen}
+          sessionId={session.id}
+          userId={currentUserId}
+          onDone={() => { setReflectOpen(false); navigate({ to: "/dashboard" }); }}
+        />
+      )}
     </div>
   );
 }
