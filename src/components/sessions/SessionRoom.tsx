@@ -60,9 +60,12 @@ export function SessionRoom({
   const navigate = useNavigate();
   const isTutor = session.tutor_id === currentUserId;
   const [lowBandwidth, setLowBandwidth] = useState(false);
+  const [reflectOpen, setReflectOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"video" | "chat" | "notes" | "resources" | "polls" | "people" | "summary">(
     "video",
   );
+
+  const leave = () => { if (isTutor) navigate({ to: "/dashboard" }); else setReflectOpen(true); };
 
   // Auto-join as student
   useEffect(() => {
