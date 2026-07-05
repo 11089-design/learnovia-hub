@@ -123,6 +123,7 @@ export function Whiteboard({
         persistenceKey={`wb-${sessionId}`}
         onMount={handleMount}
         inferDarkMode
+
       />
     </div>
   );
