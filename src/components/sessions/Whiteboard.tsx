@@ -39,19 +39,21 @@ export function Whiteboard({
   }, []);
 
   const handleMount = useCallback(
-    async (editor: Editor) => {
+    (editor: Editor) => {
       editorRef.current = editor;
 
       // Initial load
-      const { data } = await supabase
-        .from("session_whiteboards")
-        .select("snapshot")
-        .eq("session_id", sessionId)
-        .maybeSingle();
-      if (data?.snapshot && Object.keys(data.snapshot as object).length > 0) {
-        applySnapshot(data.snapshot);
-      }
-      setLoaded(true);
+      (async () => {
+        const { data } = await supabase
+          .from("session_whiteboards")
+          .select("snapshot")
+          .eq("session_id", sessionId)
+          .maybeSingle();
+        if (data?.snapshot && Object.keys(data.snapshot as object).length > 0) {
+          applySnapshot(data.snapshot);
+        }
+        setLoaded(true);
+      })();
 
       // Listen to local user changes only
       const unlisten = editor.store.listen(
@@ -65,7 +67,7 @@ export function Whiteboard({
               .from("session_whiteboards")
               .upsert({
                 session_id: sessionId,
-                snapshot: snap as unknown as Record<string, unknown>,
+                snapshot: snap as unknown as never,
                 updated_by: userId,
                 updated_at: new Date().toISOString(),
               });
@@ -82,6 +84,7 @@ export function Whiteboard({
     },
     [sessionId, userId, applySnapshot],
   );
+
 
   useEffect(() => {
     const ch = supabase
