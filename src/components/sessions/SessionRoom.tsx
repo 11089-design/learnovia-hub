@@ -4,7 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   Send, Pin, Trash2, Hand, Smile, Plus, Upload, Download, X, Loader2,
   Sparkles, Lock, Unlock, Eye, EyeOff, Radio, FileText, Users as UsersIcon,
-  ListChecks, ArrowLeft, MessageSquare, Video, NotebookPen, Wand2,
+  ListChecks, ArrowLeft, MessageSquare, Video, NotebookPen, Wand2, Palette,
+
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
@@ -18,6 +19,8 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { LiveVideoRoom } from "./LiveVideoRoom";
 import { ExitReflection } from "./ExitReflection";
+import { Whiteboard } from "./Whiteboard";
+
 import { generateSessionSummary } from "@/lib/sessions.functions";
 import { EmojiStickerPicker } from "@/components/chat/EmojiStickerPicker";
 import { MessageContent } from "@/components/chat/MessageContent";
@@ -61,9 +64,10 @@ export function SessionRoom({
   const isTutor = session.tutor_id === currentUserId;
   const [lowBandwidth, setLowBandwidth] = useState(false);
   const [reflectOpen, setReflectOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"video" | "chat" | "notes" | "resources" | "polls" | "people" | "summary">(
+  const [activeTab, setActiveTab] = useState<"video" | "chat" | "notes" | "board" | "resources" | "polls" | "people" | "summary">(
     "video",
   );
+
 
   const leave = () => { if (isTutor) navigate({ to: "/dashboard" }); else setReflectOpen(true); };
 
@@ -144,10 +148,11 @@ export function SessionRoom({
         {/* Right: tabs panel */}
         <div className="rounded-2xl border border-border/60 bg-card lg:h-[calc(100vh-6rem)] lg:sticky lg:top-20">
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="flex h-full flex-col">
-            <TabsList className="m-3 grid grid-cols-6 rounded-full">
+            <TabsList className="m-3 grid grid-cols-7 rounded-full">
               <TabsTrigger value="video" className="rounded-full" title="Live"><Video className="h-4 w-4" /></TabsTrigger>
               <TabsTrigger value="chat" className="rounded-full" title="Chat"><MessageSquare className="h-4 w-4" /></TabsTrigger>
               <TabsTrigger value="notes" className="rounded-full" title="Notes"><NotebookPen className="h-4 w-4" /></TabsTrigger>
+              <TabsTrigger value="board" className="rounded-full" title="Whiteboard"><Palette className="h-4 w-4" /></TabsTrigger>
               <TabsTrigger value="resources" className="rounded-full" title="Resources"><FileText className="h-4 w-4" /></TabsTrigger>
               <TabsTrigger value="polls" className="rounded-full" title="Polls"><ListChecks className="h-4 w-4" /></TabsTrigger>
               <TabsTrigger value="people" className="rounded-full" title="People"><UsersIcon className="h-4 w-4" /></TabsTrigger>
@@ -162,12 +167,19 @@ export function SessionRoom({
             <TabsContent value="notes" className="flex-1 overflow-hidden px-4 pb-3">
               <NotesPanel sessionId={session.id} userId={currentUserId} />
             </TabsContent>
+            <TabsContent value="board" className="flex-1 overflow-hidden px-3 pb-3">
+              <Whiteboard sessionId={session.id} userId={currentUserId} />
+            </TabsContent>
             <TabsContent value="resources" className="flex-1 overflow-hidden px-4 pb-3">
               <ResourcesPanel sessionId={session.id} isTutor={isTutor} />
             </TabsContent>
             <TabsContent value="polls" className="flex-1 overflow-hidden px-4 pb-3">
               <PollsPanel sessionId={session.id} userId={currentUserId} isTutor={isTutor} />
             </TabsContent>
+            <TabsContent value="people" className="flex-1 overflow-hidden px-4 pb-3">
+              <PeoplePanel sessionId={session.id} userId={currentUserId} isTutor={isTutor} />
+            </TabsContent>
+
             <TabsContent value="people" className="flex-1 overflow-hidden px-4 pb-3">
               <PeoplePanel sessionId={session.id} userId={currentUserId} isTutor={isTutor} />
             </TabsContent>

@@ -2,8 +2,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft, Hash, Send, Plus, Users, Megaphone, Loader2, FolderOpen,
-  Upload, FileText, Download, Trash2, Sparkles, Folder,
+  Upload, FileText, Download, Trash2, Sparkles, Folder, Volume2,
 } from "lucide-react";
+import { CommunityVoiceRoom } from "@/components/community/CommunityVoiceRoom";
+
 import { format, formatDistanceToNow } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -43,8 +45,10 @@ function CommunityPage() {
   const [activeChannel, setActiveChannel] = useState<Channel | null>(null);
   const [tab, setTab] = useState<"chat" | "posts" | "resources">("chat");
   const [me, setMe] = useState<string | null>(null);
+  const [myName, setMyName] = useState<string>("Anonymous");
   const [isMember, setIsMember] = useState(false);
   const [role, setRole] = useState<"owner" | "mod" | "member" | null>(null);
+
 
   const isMod = role === "owner" || role === "mod";
 
@@ -59,10 +63,15 @@ function CommunityPage() {
       setChannels(ch ?? []);
       setActiveChannel(ch?.[0] ?? null);
       if (u.user) {
-        const { data: m } = await supabase.from("community_members").select("user_id, role").eq("community_id", c.id).eq("user_id", u.user.id).maybeSingle();
+        const [{ data: m }, { data: p }] = await Promise.all([
+          supabase.from("community_members").select("user_id, role").eq("community_id", c.id).eq("user_id", u.user.id).maybeSingle(),
+          supabase.from("profiles").select("display_name").eq("id", u.user.id).maybeSingle(),
+        ]);
         setIsMember(!!m);
         setRole((m?.role as "owner" | "mod" | "member") ?? null);
+        if (p?.display_name) setMyName(p.display_name);
       }
+
     })();
   }, [slug]);
 
@@ -137,17 +146,22 @@ function CommunityPage() {
               {isMod && <NewChannelButton communityId={community.id} nextPos={channels.length} />}
             </div>
             <ul className="space-y-0.5">
-              {channels.map((c) => (
-                <li key={c.id}>
-                  <button
-                    onClick={() => { setActiveChannel(c); setTab("chat"); }}
-                    className={`flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm transition ${activeChannel?.id === c.id && tab === "chat" ? "bg-primary/10 text-primary" : "hover:bg-accent/40"}`}
-                  >
-                    <Hash className="h-3.5 w-3.5" /> {c.name}
-                  </button>
-                </li>
-              ))}
+              {channels.map((c) => {
+                const Icon = c.kind === "voice" ? Volume2 : Hash;
+                return (
+                  <li key={c.id}>
+                    <button
+                      onClick={() => { setActiveChannel(c); setTab("chat"); }}
+                      className={`flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm transition ${activeChannel?.id === c.id && tab === "chat" ? "bg-primary/10 text-primary" : "hover:bg-accent/40"}`}
+                    >
+                      <Icon className="h-3.5 w-3.5" /> {c.name}
+                      {c.kind === "voice" && <span className="ml-auto text-[9px] uppercase text-muted-foreground">voice</span>}
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
+
             <button onClick={() => setTab("resources")}
               className={`mt-2 flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm transition ${tab === "resources" ? "bg-primary/10 text-primary" : "hover:bg-accent/40"}`}>
               <FolderOpen className="h-3.5 w-3.5" /> Resources
@@ -183,12 +197,29 @@ function CommunityPage() {
         {/* Main */}
         <section className="rounded-2xl border border-border/60 bg-card">
           {tab === "chat" && activeChannel ? (
-            <ChannelChat channel={activeChannel} community={community} userId={me} isMember={isMember} />
+            activeChannel.kind === "voice" ? (
+              isMember ? (
+                <CommunityVoiceRoom
+                  key={activeChannel.id}
+                  channelId={activeChannel.id}
+                  channelName={activeChannel.name}
+                  displayName={myName}
+                  onLeave={() => { /* stays on channel; user can rejoin */ }}
+                />
+              ) : (
+                <div className="grid h-[calc(100vh-12rem)] place-items-center p-6 text-center text-sm text-muted-foreground">
+                  Join the community to enter voice.
+                </div>
+              )
+            ) : (
+              <ChannelChat channel={activeChannel} community={community} userId={me} isMember={isMember} />
+            )
           ) : tab === "resources" ? (
             <ResourcesPanel community={community} userId={me} isMember={isMember} isMod={isMod} />
           ) : (
             <PostsFeed community={community} userId={me} isMember={isMember} />
           )}
+
         </section>
       </main>
     </div>
@@ -199,14 +230,16 @@ function CommunityPage() {
 function NewChannelButton({ communityId, nextPos }: { communityId: string; nextPos: number }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
+  const [kind, setKind] = useState<"text" | "voice">("text");
   const [busy, setBusy] = useState(false);
   const create = async () => {
     const clean = name.trim().toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 24);
     if (!clean) return;
     setBusy(true);
-    const { error } = await supabase.from("community_channels").insert({ community_id: communityId, name: clean, kind: "text", position: nextPos });
+    const { error } = await supabase.from("community_channels").insert({ community_id: communityId, name: clean, kind, position: nextPos });
     setBusy(false);
-    if (error) toast.error(error.message); else { setName(""); setOpen(false); toast.success(`#${clean} created`); }
+    if (error) toast.error(error.message);
+    else { setName(""); setKind("text"); setOpen(false); toast.success(`${kind === "voice" ? "🔊" : "#"}${clean} created`); }
   };
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -217,7 +250,23 @@ function NewChannelButton({ communityId, nextPos }: { communityId: string; nextP
       </DialogTrigger>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader><DialogTitle>New channel</DialogTitle></DialogHeader>
-        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="study-tips" onKeyDown={(e) => e.key === "Enter" && create()} />
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setKind("text")}
+            className={`flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-sm transition ${kind === "text" ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-accent/40"}`}
+          >
+            <Hash className="h-4 w-4" /> Text
+          </button>
+          <button
+            type="button"
+            onClick={() => setKind("voice")}
+            className={`flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-sm transition ${kind === "voice" ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-accent/40"}`}
+          >
+            <Volume2 className="h-4 w-4" /> Voice
+          </button>
+        </div>
+        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={kind === "voice" ? "study-hall" : "study-tips"} onKeyDown={(e) => e.key === "Enter" && create()} />
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
           <Button onClick={create} disabled={busy || !name.trim()} className="bg-brand-gradient text-white">Create</Button>
@@ -226,6 +275,7 @@ function NewChannelButton({ communityId, nextPos }: { communityId: string; nextP
     </Dialog>
   );
 }
+
 
 /* ------------------------------ Chat ---------------------------------- */
 function ChannelChat({ channel, community, userId, isMember }: { channel: Channel; community: Community; userId: string | null; isMember: boolean }) {
