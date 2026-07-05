@@ -19,6 +19,8 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { LiveVideoRoom } from "./LiveVideoRoom";
 import { ExitReflection } from "./ExitReflection";
+import { Whiteboard } from "./Whiteboard";
+
 import { generateSessionSummary } from "@/lib/sessions.functions";
 import { EmojiStickerPicker } from "@/components/chat/EmojiStickerPicker";
 import { MessageContent } from "@/components/chat/MessageContent";
