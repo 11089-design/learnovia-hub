@@ -122,7 +122,7 @@ export function Whiteboard({
       <Tldraw
         persistenceKey={`wb-${sessionId}`}
         onMount={handleMount}
-        inferDarkMode
+        
 
       />
     </div>
