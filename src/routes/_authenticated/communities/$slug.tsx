@@ -2,8 +2,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft, Hash, Send, Plus, Users, Megaphone, Loader2, FolderOpen,
-  Upload, FileText, Download, Trash2, Sparkles, Folder,
+  Upload, FileText, Download, Trash2, Sparkles, Folder, Volume2,
 } from "lucide-react";
+import { CommunityVoiceRoom } from "@/components/community/CommunityVoiceRoom";
+
 import { format, formatDistanceToNow } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
