@@ -919,6 +919,35 @@ export type Database = {
           },
         ]
       }
+      session_whiteboards: {
+        Row: {
+          session_id: string
+          snapshot: Json
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          session_id: string
+          snapshot?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          session_id?: string
+          snapshot?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_whiteboards_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sessions: {
         Row: {
           category_id: string | null
