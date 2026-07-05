@@ -197,12 +197,29 @@ function CommunityPage() {
         {/* Main */}
         <section className="rounded-2xl border border-border/60 bg-card">
           {tab === "chat" && activeChannel ? (
-            <ChannelChat channel={activeChannel} community={community} userId={me} isMember={isMember} />
+            activeChannel.kind === "voice" ? (
+              isMember ? (
+                <CommunityVoiceRoom
+                  key={activeChannel.id}
+                  channelId={activeChannel.id}
+                  channelName={activeChannel.name}
+                  displayName={myName}
+                  onLeave={() => { /* stays on channel; user can rejoin */ }}
+                />
+              ) : (
+                <div className="grid h-[calc(100vh-12rem)] place-items-center p-6 text-center text-sm text-muted-foreground">
+                  Join the community to enter voice.
+                </div>
+              )
+            ) : (
+              <ChannelChat channel={activeChannel} community={community} userId={me} isMember={isMember} />
+            )
           ) : tab === "resources" ? (
             <ResourcesPanel community={community} userId={me} isMember={isMember} isMod={isMod} />
           ) : (
             <PostsFeed community={community} userId={me} isMember={isMember} />
           )}
+
         </section>
       </main>
     </div>
