@@ -63,10 +63,15 @@ function CommunityPage() {
       setChannels(ch ?? []);
       setActiveChannel(ch?.[0] ?? null);
       if (u.user) {
-        const { data: m } = await supabase.from("community_members").select("user_id, role").eq("community_id", c.id).eq("user_id", u.user.id).maybeSingle();
+        const [{ data: m }, { data: p }] = await Promise.all([
+          supabase.from("community_members").select("user_id, role").eq("community_id", c.id).eq("user_id", u.user.id).maybeSingle(),
+          supabase.from("profiles").select("display_name").eq("id", u.user.id).maybeSingle(),
+        ]);
         setIsMember(!!m);
         setRole((m?.role as "owner" | "mod" | "member") ?? null);
+        if (p?.display_name) setMyName(p.display_name);
       }
+
     })();
   }, [slug]);
 
