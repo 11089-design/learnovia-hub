@@ -4,7 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   Send, Pin, Trash2, Hand, Smile, Plus, Upload, Download, X, Loader2,
   Sparkles, Lock, Unlock, Eye, EyeOff, Radio, FileText, Users as UsersIcon,
-  ListChecks, ArrowLeft, MessageSquare, Video, NotebookPen, Wand2,
+  ListChecks, ArrowLeft, MessageSquare, Video, NotebookPen, Wand2, Palette,
+
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
