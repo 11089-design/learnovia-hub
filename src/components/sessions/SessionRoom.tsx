@@ -148,10 +148,11 @@ export function SessionRoom({
         {/* Right: tabs panel */}
         <div className="rounded-2xl border border-border/60 bg-card lg:h-[calc(100vh-6rem)] lg:sticky lg:top-20">
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="flex h-full flex-col">
-            <TabsList className="m-3 grid grid-cols-6 rounded-full">
+            <TabsList className="m-3 grid grid-cols-7 rounded-full">
               <TabsTrigger value="video" className="rounded-full" title="Live"><Video className="h-4 w-4" /></TabsTrigger>
               <TabsTrigger value="chat" className="rounded-full" title="Chat"><MessageSquare className="h-4 w-4" /></TabsTrigger>
               <TabsTrigger value="notes" className="rounded-full" title="Notes"><NotebookPen className="h-4 w-4" /></TabsTrigger>
+              <TabsTrigger value="board" className="rounded-full" title="Whiteboard"><Palette className="h-4 w-4" /></TabsTrigger>
               <TabsTrigger value="resources" className="rounded-full" title="Resources"><FileText className="h-4 w-4" /></TabsTrigger>
               <TabsTrigger value="polls" className="rounded-full" title="Polls"><ListChecks className="h-4 w-4" /></TabsTrigger>
               <TabsTrigger value="people" className="rounded-full" title="People"><UsersIcon className="h-4 w-4" /></TabsTrigger>
@@ -166,12 +167,19 @@ export function SessionRoom({
             <TabsContent value="notes" className="flex-1 overflow-hidden px-4 pb-3">
               <NotesPanel sessionId={session.id} userId={currentUserId} />
             </TabsContent>
+            <TabsContent value="board" className="flex-1 overflow-hidden px-3 pb-3">
+              <Whiteboard sessionId={session.id} userId={currentUserId} />
+            </TabsContent>
             <TabsContent value="resources" className="flex-1 overflow-hidden px-4 pb-3">
               <ResourcesPanel sessionId={session.id} isTutor={isTutor} />
             </TabsContent>
             <TabsContent value="polls" className="flex-1 overflow-hidden px-4 pb-3">
               <PollsPanel sessionId={session.id} userId={currentUserId} isTutor={isTutor} />
             </TabsContent>
+            <TabsContent value="people" className="flex-1 overflow-hidden px-4 pb-3">
+              <PeoplePanel sessionId={session.id} userId={currentUserId} isTutor={isTutor} />
+            </TabsContent>
+
             <TabsContent value="people" className="flex-1 overflow-hidden px-4 pb-3">
               <PeoplePanel sessionId={session.id} userId={currentUserId} isTutor={isTutor} />
             </TabsContent>
