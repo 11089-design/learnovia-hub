@@ -146,17 +146,22 @@ function CommunityPage() {
               {isMod && <NewChannelButton communityId={community.id} nextPos={channels.length} />}
             </div>
             <ul className="space-y-0.5">
-              {channels.map((c) => (
-                <li key={c.id}>
-                  <button
-                    onClick={() => { setActiveChannel(c); setTab("chat"); }}
-                    className={`flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm transition ${activeChannel?.id === c.id && tab === "chat" ? "bg-primary/10 text-primary" : "hover:bg-accent/40"}`}
-                  >
-                    <Hash className="h-3.5 w-3.5" /> {c.name}
-                  </button>
-                </li>
-              ))}
+              {channels.map((c) => {
+                const Icon = c.kind === "voice" ? Volume2 : Hash;
+                return (
+                  <li key={c.id}>
+                    <button
+                      onClick={() => { setActiveChannel(c); setTab("chat"); }}
+                      className={`flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm transition ${activeChannel?.id === c.id && tab === "chat" ? "bg-primary/10 text-primary" : "hover:bg-accent/40"}`}
+                    >
+                      <Icon className="h-3.5 w-3.5" /> {c.name}
+                      {c.kind === "voice" && <span className="ml-auto text-[9px] uppercase text-muted-foreground">voice</span>}
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
+
             <button onClick={() => setTab("resources")}
               className={`mt-2 flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm transition ${tab === "resources" ? "bg-primary/10 text-primary" : "hover:bg-accent/40"}`}>
               <FolderOpen className="h-3.5 w-3.5" /> Resources
