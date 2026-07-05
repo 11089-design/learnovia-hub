@@ -230,14 +230,16 @@ function CommunityPage() {
 function NewChannelButton({ communityId, nextPos }: { communityId: string; nextPos: number }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
+  const [kind, setKind] = useState<"text" | "voice">("text");
   const [busy, setBusy] = useState(false);
   const create = async () => {
     const clean = name.trim().toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 24);
     if (!clean) return;
     setBusy(true);
-    const { error } = await supabase.from("community_channels").insert({ community_id: communityId, name: clean, kind: "text", position: nextPos });
+    const { error } = await supabase.from("community_channels").insert({ community_id: communityId, name: clean, kind, position: nextPos });
     setBusy(false);
-    if (error) toast.error(error.message); else { setName(""); setOpen(false); toast.success(`#${clean} created`); }
+    if (error) toast.error(error.message);
+    else { setName(""); setKind("text"); setOpen(false); toast.success(`${kind === "voice" ? "🔊" : "#"}${clean} created`); }
   };
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -248,7 +250,23 @@ function NewChannelButton({ communityId, nextPos }: { communityId: string; nextP
       </DialogTrigger>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader><DialogTitle>New channel</DialogTitle></DialogHeader>
-        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="study-tips" onKeyDown={(e) => e.key === "Enter" && create()} />
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setKind("text")}
+            className={`flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-sm transition ${kind === "text" ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-accent/40"}`}
+          >
+            <Hash className="h-4 w-4" /> Text
+          </button>
+          <button
+            type="button"
+            onClick={() => setKind("voice")}
+            className={`flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-sm transition ${kind === "voice" ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-accent/40"}`}
+          >
+            <Volume2 className="h-4 w-4" /> Voice
+          </button>
+        </div>
+        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={kind === "voice" ? "study-hall" : "study-tips"} onKeyDown={(e) => e.key === "Enter" && create()} />
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
           <Button onClick={create} disabled={busy || !name.trim()} className="bg-brand-gradient text-white">Create</Button>
@@ -257,6 +275,7 @@ function NewChannelButton({ communityId, nextPos }: { communityId: string; nextP
     </Dialog>
   );
 }
+
 
 /* ------------------------------ Chat ---------------------------------- */
 function ChannelChat({ channel, community, userId, isMember }: { channel: Channel; community: Community; userId: string | null; isMember: boolean }) {
