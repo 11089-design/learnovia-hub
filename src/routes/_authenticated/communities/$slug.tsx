@@ -45,8 +45,10 @@ function CommunityPage() {
   const [activeChannel, setActiveChannel] = useState<Channel | null>(null);
   const [tab, setTab] = useState<"chat" | "posts" | "resources">("chat");
   const [me, setMe] = useState<string | null>(null);
+  const [myName, setMyName] = useState<string>("Anonymous");
   const [isMember, setIsMember] = useState(false);
   const [role, setRole] = useState<"owner" | "mod" | "member" | null>(null);
+
 
   const isMod = role === "owner" || role === "mod";
 
