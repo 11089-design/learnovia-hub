@@ -512,7 +512,9 @@ function ChatPanel({ sessionId, userId, isTutor }: { sessionId: string; userId: 
 }
 
 /* ----------------------------- Notes panel ---------------------------- */
-function NotesPanel({ sessionId, userId }: { sessionId: string; userId: string }) {
+function NotesPanel({ sessionId, userId, startedAt }: { sessionId: string; userId: string; startedAt: string | null }) {
+  const sharedRef = useRef<HTMLTextAreaElement>(null);
+  const privateRef = useRef<HTMLTextAreaElement>(null);
   const [tab, setTab] = useState<"shared" | "private">("shared");
   const [shared, setShared] = useState("");
   const [privateText, setPrivateText] = useState("");
