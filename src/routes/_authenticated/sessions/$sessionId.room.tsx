@@ -33,6 +33,7 @@ function SessionRoomPage() {
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(true);
   const [denied, setDenied] = useState<string | null>(null);
+  const [needsWaiting, setNeedsWaiting] = useState(false);
 
   useEffect(() => {
     (async () => {
