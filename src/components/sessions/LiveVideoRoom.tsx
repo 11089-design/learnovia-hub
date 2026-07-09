@@ -7,18 +7,21 @@ import {
 } from "@livekit/components-react";
 import "@livekit/components-styles";
 import { Loader2, VideoOff, AlertTriangle } from "lucide-react";
-import { getLiveKitToken } from "@/lib/livekit.functions";
+import { getLiveKitToken, getBreakoutToken } from "@/lib/livekit.functions";
 
 export function LiveVideoRoom({
   sessionId,
   displayName,
   lowBandwidth,
+  breakoutId,
 }: {
   sessionId: string;
   displayName: string;
   lowBandwidth: boolean;
+  breakoutId?: string | null;
 }) {
   const fetchToken = useServerFn(getLiveKitToken);
+  const fetchBreakoutToken = useServerFn(getBreakoutToken);
   const [state, setState] = useState<
     | { kind: "loading" }
     | { kind: "missing"; message: string }
@@ -28,24 +31,26 @@ export function LiveVideoRoom({
 
   useEffect(() => {
     let cancelled = false;
-    fetchToken({ data: { sessionId, displayName } })
-      .then((res) => {
-        if (cancelled) return;
-        if (!res.configured) {
-          setState({ kind: "missing", message: res.message });
-        } else {
-          setState({ kind: "ready", token: res.token, url: res.url });
-        }
-      })
-      .catch((err: unknown) => {
-        if (cancelled) return;
-        const msg = err instanceof Error ? err.message : "Couldn't connect to video";
-        setState({ kind: "error", message: msg });
-      });
+    setState({ kind: "loading" });
+    const p = breakoutId
+      ? fetchBreakoutToken({ data: { sessionId, breakoutId, displayName } })
+      : fetchToken({ data: { sessionId, displayName } });
+    p.then((res) => {
+      if (cancelled) return;
+      if (!res.configured) {
+        setState({ kind: "missing", message: res.message });
+      } else {
+        setState({ kind: "ready", token: res.token, url: res.url });
+      }
+    }).catch((err: unknown) => {
+      if (cancelled) return;
+      const msg = err instanceof Error ? err.message : "Couldn't connect to video";
+      setState({ kind: "error", message: msg });
+    });
     return () => {
       cancelled = true;
     };
-  }, [sessionId, displayName, fetchToken]);
+  }, [sessionId, displayName, fetchToken, fetchBreakoutToken, breakoutId]);
 
   if (state.kind === "loading") {
     return (
@@ -84,6 +89,7 @@ export function LiveVideoRoom({
   return (
     <div className="h-full overflow-hidden rounded-2xl" data-lk-theme="default">
       <LiveKitRoom
+        key={breakoutId ?? "main"}
         serverUrl={state.url}
         token={state.token}
         connect
