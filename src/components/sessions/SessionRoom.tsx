@@ -843,15 +843,31 @@ function PollsPanel({ sessionId, userId, isTutor }: { sessionId: string; userId:
 }
 
 /* ----------------------------- People panel --------------------------- */
-function PeoplePanel({ sessionId, userId, isTutor }: { sessionId: string; userId: string; isTutor: boolean }) {
+function PeoplePanel({
+  sessionId,
+  userId,
+  isTutor,
+  spotlightId,
+}: {
+  sessionId: string;
+  userId: string;
+  isTutor: boolean;
+  spotlightId: string | null;
+}) {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
   const [hands, setHands] = useState<HandRaise[]>([]);
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     const loadParts = async () => {
       const { data } = await supabase.from("session_participants")
-        .select("id, user_id, role, joined_at, left_at")
+        .select("id, user_id, role, joined_at, left_at, muted, removed, anonymous_name")
         .eq("session_id", sessionId).order("joined_at");
       setParticipants((data ?? []) as Participant[]);
     };
@@ -890,6 +906,36 @@ function PeoplePanel({ sessionId, userId, isTutor }: { sessionId: string; userId
     await supabase.from("hand_raises").update({ resolved_at: new Date().toISOString() }).eq("id", id);
   };
 
+  const toggleMute = async (p: Participant) => {
+    await supabase.from("session_participants").update({ muted: !p.muted }).eq("id", p.id);
+    toast.info(p.muted ? "Unmuted" : "Muted");
+  };
+  const removeParticipant = async (p: Participant) => {
+    if (!confirm(`Remove ${nameFor(p)} from this session?`)) return;
+    await supabase.from("session_participants").update({
+      removed: true,
+      left_at: new Date().toISOString(),
+    }).eq("id", p.id);
+  };
+  const toggleSpotlight = async (p: Participant) => {
+    const next = spotlightId === p.user_id ? null : p.user_id;
+    await supabase.from("sessions").update({ spotlight_user_id: next }).eq("id", sessionId);
+  };
+
+  const nameFor = (p: Participant) =>
+    p.anonymous_name ?? profiles[p.user_id]?.display_name ?? "…";
+
+  const fmtDuration = (p: Participant) => {
+    const start = new Date(p.joined_at).getTime();
+    const end = p.left_at ? new Date(p.left_at).getTime() : now;
+    const mins = Math.max(0, Math.floor((end - start) / 60000));
+    if (mins < 1) return "just now";
+    return formatDistanceStrict(0, mins * 60000);
+  };
+
+  const present = participants.filter((p) => !p.left_at && !p.removed);
+  const gone = participants.filter((p) => p.left_at || p.removed);
+
   return (
     <div className="flex h-full flex-col">
       <Button onClick={raiseHand} size="sm" variant={myHand ? "default" : "outline"}
@@ -901,32 +947,80 @@ function PeoplePanel({ sessionId, userId, isTutor }: { sessionId: string; userId
         <div className="mb-3 rounded-xl border border-primary/20 bg-primary/5 p-2">
           <p className="mb-1 text-[10px] font-semibold uppercase text-primary">Hand raise queue</p>
           <ul className="space-y-1">
-            {hands.map((h) => (
-              <li key={h.id} className="flex items-center justify-between text-xs">
-                <span>{profiles[h.user_id]?.display_name ?? "…"}</span>
-                <span className="text-muted-foreground">{formatDistanceToNow(new Date(h.raised_at), { addSuffix: true })}</span>
-                {isTutor && <button onClick={() => resolveHand(h.id)}><X className="h-3 w-3" /></button>}
-              </li>
-            ))}
+            {hands.map((h) => {
+              const p = participants.find((x) => x.user_id === h.user_id);
+              return (
+                <li key={h.id} className="flex items-center justify-between text-xs">
+                  <span>{p ? nameFor(p) : "…"}</span>
+                  <span className="text-muted-foreground">{formatDistanceToNow(new Date(h.raised_at), { addSuffix: true })}</span>
+                  {isTutor && <button onClick={() => resolveHand(h.id)}><X className="h-3 w-3" /></button>}
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}
 
       <ScrollArea className="flex-1 pr-2">
+        <p className="mb-1 px-1 text-[10px] font-semibold uppercase text-muted-foreground">
+          In room · {present.length}
+        </p>
         <ul className="space-y-1.5">
-          {participants.map((p) => {
+          {present.map((p) => {
             const prof = profiles[p.user_id];
+            const isMe = p.user_id === userId;
+            const spotlit = spotlightId === p.user_id;
             return (
-              <li key={p.id} className="flex items-center gap-2 rounded-lg p-1.5 text-sm hover:bg-accent/30">
+              <li key={p.id} className={`group flex items-center gap-2 rounded-lg p-1.5 text-sm ${spotlit ? "bg-primary/10 ring-1 ring-primary/40" : "hover:bg-accent/30"}`}>
                 <div className="grid h-7 w-7 place-items-center rounded-full bg-brand-gradient text-[10px] font-semibold text-white">
-                  {(prof?.display_name ?? "?").slice(0, 1).toUpperCase()}
+                  {nameFor(p).slice(0, 1).toUpperCase()}
                 </div>
-                <span className="flex-1 truncate">{prof?.display_name ?? "…"}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="truncate">{nameFor(p)}{isMe && <span className="ml-1 text-[10px] text-muted-foreground">(you)</span>}</span>
+                    {p.anonymous_name && <Badge variant="outline" className="rounded-full text-[9px]">Anon</Badge>}
+                    {p.muted && <MicOff className="h-3 w-3 text-destructive" />}
+                    {spotlit && <Star className="h-3 w-3 fill-amber-400 text-amber-400" />}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">{fmtDuration(p)}</p>
+                </div>
                 {p.role === "tutor" && <Badge variant="secondary" className="rounded-full text-[10px]">Tutor</Badge>}
+                {isTutor && !isMe && p.role !== "tutor" && (
+                  <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                    <button title={spotlit ? "Remove spotlight" : "Spotlight"} onClick={() => toggleSpotlight(p)}>
+                      <Star className={`h-3.5 w-3.5 ${spotlit ? "fill-amber-400 text-amber-400" : "text-muted-foreground hover:text-amber-500"}`} />
+                    </button>
+                    <button title={p.muted ? "Unmute" : "Mute"} onClick={() => toggleMute(p)}>
+                      <MicOff className={`h-3.5 w-3.5 ${p.muted ? "text-destructive" : "text-muted-foreground hover:text-destructive"}`} />
+                    </button>
+                    <button title="Remove" onClick={() => removeParticipant(p)}>
+                      <UserX className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                    </button>
+                  </div>
+                )}
               </li>
             );
           })}
         </ul>
+
+        {gone.length > 0 && (
+          <>
+            <p className="mb-1 mt-4 px-1 text-[10px] font-semibold uppercase text-muted-foreground">
+              Left · {gone.length}
+            </p>
+            <ul className="space-y-1">
+              {gone.map((p) => (
+                <li key={p.id} className="flex items-center gap-2 rounded-lg p-1.5 text-xs text-muted-foreground">
+                  <div className="grid h-6 w-6 place-items-center rounded-full bg-muted text-[10px] font-semibold">
+                    {nameFor(p).slice(0, 1).toUpperCase()}
+                  </div>
+                  <span className="flex-1 truncate">{nameFor(p)}</span>
+                  <span>attended {fmtDuration(p)}</span>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
       </ScrollArea>
     </div>
   );
