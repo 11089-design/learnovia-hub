@@ -50,13 +50,11 @@ export function AgendaBar({
 
   const save = async (next: AgendaItem[]) => {
     setItems(next);
-    // @ts-expect-error jsonb column typed once regenerated
-    const { error } = await supabase.from("sessions").update({ agenda: next }).eq("id", sessionId);
+    const { error } = await supabase.from("sessions").update({ agenda: next as unknown as never }).eq("id", sessionId);
     if (error) toast.error(error.message);
   };
 
   const startClock = async () => {
-    // @ts-expect-error started_at added by migration
     const { error } = await supabase.from("sessions").update({ started_at: new Date().toISOString() }).eq("id", sessionId);
     if (error) toast.error(error.message);
     else toast.success("Session clock started");
