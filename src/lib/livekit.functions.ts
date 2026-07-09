@@ -12,6 +12,12 @@ const CommunityInput = z.object({
   displayName: z.string().min(1).max(60),
 });
 
+const BreakoutInput = z.object({
+  sessionId: z.string().uuid(),
+  breakoutId: z.string().uuid(),
+  displayName: z.string().min(1).max(60),
+});
+
 function readEnv() {
   const url = process.env.LIVEKIT_URL;
   const apiKey = process.env.LIVEKIT_API_KEY;
