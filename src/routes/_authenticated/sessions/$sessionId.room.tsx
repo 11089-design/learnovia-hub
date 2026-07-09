@@ -61,7 +61,8 @@ function SessionRoomPage() {
           .maybeSingle();
         if (!part) {
           if (s.locked) {
-            setDenied("This session is locked. Enrollment closed.");
+            // Route to waiting room instead of denying
+            setNeedsWaiting(true);
             setLoading(false);
             return;
           }
