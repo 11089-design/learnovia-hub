@@ -5,9 +5,9 @@ import {
   Send, Pin, Trash2, Hand, Smile, Plus, Upload, Download, X, Loader2,
   Sparkles, Lock, Unlock, Eye, EyeOff, Radio, FileText, Users as UsersIcon,
   ListChecks, ArrowLeft, MessageSquare, Video, NotebookPen, Wand2, Palette,
-
+  MicOff, UserX, Star, Clock, VenetianMask, DoorOpen,
 } from "lucide-react";
-import { format, formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow, formatDistanceStrict } from "date-fns";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +20,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { LiveVideoRoom } from "./LiveVideoRoom";
 import { ExitReflection } from "./ExitReflection";
 import { Whiteboard } from "./Whiteboard";
+import { AgendaBar, type AgendaItem } from "./AgendaBar";
+import { WaitingRoomPanel } from "./WaitingRoomPanel";
+import { BreakoutsPanel } from "./BreakoutsPanel";
 
 import { generateSessionSummary } from "@/lib/sessions.functions";
 import { EmojiStickerPicker } from "@/components/chat/EmojiStickerPicker";
@@ -43,13 +46,29 @@ type Session = {
   is_homework_help: boolean;
 };
 
+type SessionExtras = {
+  agenda: AgendaItem[];
+  spotlight_user_id: string | null;
+  started_at: string | null;
+  allow_anonymous: boolean;
+};
+
 type Profile = { id: string; display_name: string | null; avatar_url: string | null };
 type Message = { id: string; user_id: string; content: string; pinned: boolean; created_at: string };
 type Resource = { id: string; title: string; kind: string; url: string | null; file_path: string | null; created_at: string };
 type Poll = { id: string; question: string; options: string[]; closed: boolean; created_at: string };
 type PollVote = { poll_id: string; user_id: string; option_index: number };
 type HandRaise = { id: string; user_id: string; raised_at: string; resolved_at: string | null };
-type Participant = { id: string; user_id: string; role: string; joined_at: string; left_at: string | null };
+type Participant = {
+  id: string;
+  user_id: string;
+  role: string;
+  joined_at: string;
+  left_at: string | null;
+  muted: boolean;
+  removed: boolean;
+  anonymous_name: string | null;
+};
 
 export function SessionRoom({
   session,
@@ -64,9 +83,57 @@ export function SessionRoom({
   const isTutor = session.tutor_id === currentUserId;
   const [lowBandwidth, setLowBandwidth] = useState(false);
   const [reflectOpen, setReflectOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"video" | "chat" | "notes" | "board" | "resources" | "polls" | "people" | "summary">(
-    "video",
-  );
+  const [activeBreakoutId, setActiveBreakoutId] = useState<string | null>(null);
+  const [extras, setExtras] = useState<SessionExtras>({
+    agenda: [],
+    spotlight_user_id: null,
+    started_at: null,
+    allow_anonymous: true,
+  });
+  const [useAnon, setUseAnon] = useState(false);
+  const [anonName, setAnonName] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<
+    "video" | "chat" | "notes" | "board" | "resources" | "polls" | "people" | "breakouts" | "summary"
+  >("video");
+
+  // Load session extras (agenda/spotlight/started_at/allow_anonymous)
+  useEffect(() => {
+    supabase
+      .from("sessions")
+      .select("agenda, spotlight_user_id, started_at, allow_anonymous")
+      .eq("id", session.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setExtras({
+            agenda: (Array.isArray(data.agenda) ? data.agenda : []) as AgendaItem[],
+            spotlight_user_id: data.spotlight_user_id ?? null,
+            started_at: data.started_at ?? null,
+            allow_anonymous: data.allow_anonymous ?? true,
+          });
+        }
+      });
+    const ch = supabase
+      .channel(`sess-extras-${session.id}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "sessions", filter: `id=eq.${session.id}` },
+        (payload) => {
+          const n = payload.new as Record<string, unknown>;
+          setExtras((prev) => ({
+            agenda: Array.isArray(n.agenda) ? (n.agenda as AgendaItem[]) : prev.agenda,
+            spotlight_user_id: (n.spotlight_user_id as string | null) ?? null,
+            started_at: (n.started_at as string | null) ?? null,
+            allow_anonymous: (n.allow_anonymous as boolean) ?? true,
+          }));
+        },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [session.id]);
+
+  const effectiveDisplayName = useAnon && anonName ? anonName : myDisplayName;
+
 
 
   const leave = () => { if (isTutor) navigate({ to: "/dashboard" }); else setReflectOpen(true); };
