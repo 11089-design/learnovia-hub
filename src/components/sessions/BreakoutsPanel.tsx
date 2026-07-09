@@ -47,17 +47,18 @@ export function BreakoutsPanel({
       setBreakouts((data ?? []) as Breakout[]);
     };
     const loadParts = async () => {
-      const { data } = await supabase
+      const { data: parts } = await supabase
         .from("session_participants")
-        .select("user_id, profiles:profiles!inner(display_name)")
+        .select("user_id")
         .eq("session_id", sessionId);
-      setParticipants(
-        (data ?? []).map((r) => {
-          const rec = r as { user_id: string; profiles: { display_name: string | null } | { display_name: string | null }[] | null };
-          const prof = Array.isArray(rec.profiles) ? rec.profiles[0] : rec.profiles;
-          return { user_id: rec.user_id, display_name: prof?.display_name ?? null };
-        }),
-      );
+      const ids = (parts ?? []).map((p) => p.user_id);
+      if (ids.length === 0) { setParticipants([]); return; }
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id, display_name")
+        .in("id", ids);
+      const nameMap = new Map((profs ?? []).map((p) => [p.id, p.display_name]));
+      setParticipants(ids.map((id) => ({ user_id: id, display_name: nameMap.get(id) ?? null })));
     };
     loadBreakouts();
     loadParts();
