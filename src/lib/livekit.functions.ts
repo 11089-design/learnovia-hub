@@ -137,3 +137,49 @@ export const getCommunityVoiceToken = createServerFn({ method: "POST" })
 
     return { configured: true as const, token, url: env.url, room };
   });
+
+export const getBreakoutToken = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => BreakoutInput.parse(input))
+  .handler(async ({ data, context }) => {
+    const env = readEnv();
+    if (!env.configured) return env;
+
+    const { supabase, userId } = context;
+
+    const { data: breakout, error: bErr } = await supabase
+      .from("session_breakouts")
+      .select("id, session_id, name, closed")
+      .eq("id", data.breakoutId)
+      .eq("session_id", data.sessionId)
+      .maybeSingle();
+    if (bErr || !breakout) throw new Error("Breakout not found");
+    if (breakout.closed) throw new Error("This breakout is closed.");
+
+    const { data: session } = await supabase
+      .from("sessions")
+      .select("tutor_id")
+      .eq("id", data.sessionId)
+      .maybeSingle();
+    const isTutor = session?.tutor_id === userId;
+
+    if (!isTutor) {
+      const { data: assign } = await supabase
+        .from("session_breakout_assignments")
+        .select("user_id")
+        .eq("breakout_id", data.breakoutId)
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (!assign) throw new Error("You are not assigned to this breakout.");
+    }
+
+    const room = `session-${data.sessionId}-breakout-${data.breakoutId}`;
+    const token = await mintToken({
+      apiKey: env.apiKey,
+      apiSecret: env.apiSecret,
+      identity: userId,
+      displayName: data.displayName,
+      room,
+    });
+    return { configured: true as const, token, url: env.url, room };
+  });
