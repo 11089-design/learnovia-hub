@@ -108,5 +108,16 @@ function SessionRoomPage() {
     );
   }
 
+  if (needsWaiting) {
+    return (
+      <WaitingRoomStandby
+        sessionId={sessionId}
+        userId={userId}
+        displayName={displayName}
+        onApproved={() => setNeedsWaiting(false)}
+      />
+    );
+  }
+
   return <SessionRoom session={session} currentUserId={userId} myDisplayName={displayName} />;
 }
