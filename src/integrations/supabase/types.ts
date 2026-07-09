@@ -565,6 +565,64 @@ export type Database = {
         }
         Relationships: []
       }
+      session_breakout_assignments: {
+        Row: {
+          breakout_id: string
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          breakout_id: string
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          breakout_id?: string
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_breakout_assignments_breakout_id_fkey"
+            columns: ["breakout_id"]
+            isOneToOne: false
+            referencedRelation: "session_breakouts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_breakouts: {
+        Row: {
+          closed: boolean
+          created_at: string
+          id: string
+          name: string
+          session_id: string
+        }
+        Insert: {
+          closed?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          session_id: string
+        }
+        Update: {
+          closed?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_breakouts_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       session_messages: {
         Row: {
           content: string
@@ -670,28 +728,37 @@ export type Database = {
       }
       session_participants: {
         Row: {
+          anonymous_name: string | null
           attended_minutes: number
           id: string
           joined_at: string
           left_at: string | null
+          muted: boolean
+          removed: boolean
           role: Database["public"]["Enums"]["participant_role"]
           session_id: string
           user_id: string
         }
         Insert: {
+          anonymous_name?: string | null
           attended_minutes?: number
           id?: string
           joined_at?: string
           left_at?: string | null
+          muted?: boolean
+          removed?: boolean
           role?: Database["public"]["Enums"]["participant_role"]
           session_id: string
           user_id: string
         }
         Update: {
+          anonymous_name?: string | null
           attended_minutes?: number
           id?: string
           joined_at?: string
           left_at?: string | null
+          muted?: boolean
+          removed?: boolean
           role?: Database["public"]["Enums"]["participant_role"]
           session_id?: string
           user_id?: string
@@ -919,6 +986,44 @@ export type Database = {
           },
         ]
       }
+      session_waiting_room: {
+        Row: {
+          display_name: string
+          id: string
+          requested_at: string
+          resolved_at: string | null
+          session_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          display_name: string
+          id?: string
+          requested_at?: string
+          resolved_at?: string | null
+          session_id: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          display_name?: string
+          id?: string
+          requested_at?: string
+          resolved_at?: string | null
+          session_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_waiting_room_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       session_whiteboards: {
         Row: {
           session_id: string
@@ -950,6 +1055,8 @@ export type Database = {
       }
       sessions: {
         Row: {
+          agenda: Json
+          allow_anonymous: boolean
           category_id: string | null
           cover_url: string | null
           created_at: string
@@ -967,6 +1074,8 @@ export type Database = {
           meeting_room_name: string
           outcomes: string[]
           price_cents: number
+          spotlight_user_id: string | null
+          started_at: string | null
           starts_at: string | null
           status: Database["public"]["Enums"]["session_status"]
           title: string
@@ -974,6 +1083,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          agenda?: Json
+          allow_anonymous?: boolean
           category_id?: string | null
           cover_url?: string | null
           created_at?: string
@@ -991,6 +1102,8 @@ export type Database = {
           meeting_room_name?: string
           outcomes?: string[]
           price_cents?: number
+          spotlight_user_id?: string | null
+          started_at?: string | null
           starts_at?: string | null
           status?: Database["public"]["Enums"]["session_status"]
           title: string
@@ -998,6 +1111,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          agenda?: Json
+          allow_anonymous?: boolean
           category_id?: string | null
           cover_url?: string | null
           created_at?: string
@@ -1015,6 +1130,8 @@ export type Database = {
           meeting_room_name?: string
           outcomes?: string[]
           price_cents?: number
+          spotlight_user_id?: string | null
+          started_at?: string | null
           starts_at?: string | null
           status?: Database["public"]["Enums"]["session_status"]
           title?: string
