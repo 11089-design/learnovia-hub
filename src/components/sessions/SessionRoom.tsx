@@ -561,6 +561,27 @@ function NotesPanel({ sessionId, userId, startedAt }: { sessionId: string; userI
     }, 600);
   };
 
+  const insertTimestamp = () => {
+    if (!startedAt) { toast.info("Tutor hasn't started the session clock yet."); return; }
+    const secs = Math.max(0, Math.floor((Date.now() - new Date(startedAt).getTime()) / 1000));
+    const mm = Math.floor(secs / 60).toString().padStart(2, "0");
+    const ss = (secs % 60).toString().padStart(2, "0");
+    const stamp = `[${mm}:${ss}] `;
+    if (tab === "shared") {
+      const el = sharedRef.current;
+      const pos = el?.selectionStart ?? shared.length;
+      const next = shared.slice(0, pos) + stamp + shared.slice(pos);
+      onSharedChange(next);
+      requestAnimationFrame(() => el?.focus());
+    } else {
+      const el = privateRef.current;
+      const pos = el?.selectionStart ?? privateText.length;
+      const next = privateText.slice(0, pos) + stamp + privateText.slice(pos);
+      onPrivateChange(next);
+      requestAnimationFrame(() => el?.focus());
+    }
+  };
+
   return (
     <div className="flex h-full flex-col">
       <div className="mb-2 flex items-center justify-between">
@@ -568,14 +589,19 @@ function NotesPanel({ sessionId, userId, startedAt }: { sessionId: string; userI
           <button onClick={() => setTab("shared")} className={`rounded-full px-3 py-1 ${tab === "shared" ? "bg-background shadow-sm" : "text-muted-foreground"}`}>Shared</button>
           <button onClick={() => setTab("private")} className={`rounded-full px-3 py-1 ${tab === "private" ? "bg-background shadow-sm" : "text-muted-foreground"}`}>Private</button>
         </div>
-        <span className="text-[10px] text-muted-foreground">
-          {tab === "shared" ? (savingShared ? "Saving…" : "Auto-saves") : (savingPrivate ? "Saving…" : "Only you")}
-        </span>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="ghost" className="h-6 rounded-full px-2 text-[10px]" onClick={insertTimestamp} title="Insert timestamp">
+            <Clock className="mr-1 h-3 w-3" /> Timestamp
+          </Button>
+          <span className="text-[10px] text-muted-foreground">
+            {tab === "shared" ? (savingShared ? "Saving…" : "Auto-saves") : (savingPrivate ? "Saving…" : "Only you")}
+          </span>
+        </div>
       </div>
       {tab === "shared" ? (
-        <Textarea value={shared} onChange={(e) => onSharedChange(e.target.value)} placeholder="Collaborative class notes…" className="flex-1 resize-none" />
+        <Textarea ref={sharedRef} value={shared} onChange={(e) => onSharedChange(e.target.value)} placeholder="Collaborative class notes…  Tip: use Timestamp to link a moment in the video." className="flex-1 resize-none font-mono text-sm" />
       ) : (
-        <Textarea value={privateText} onChange={(e) => onPrivateChange(e.target.value)} placeholder="Your private notes (no one else sees these)…" className="flex-1 resize-none" />
+        <Textarea ref={privateRef} value={privateText} onChange={(e) => onPrivateChange(e.target.value)} placeholder="Your private notes (no one else sees these)…" className="flex-1 resize-none font-mono text-sm" />
       )}
     </div>
   );
