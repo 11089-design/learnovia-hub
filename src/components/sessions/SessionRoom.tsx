@@ -5,9 +5,9 @@ import {
   Send, Pin, Trash2, Hand, Smile, Plus, Upload, Download, X, Loader2,
   Sparkles, Lock, Unlock, Eye, EyeOff, Radio, FileText, Users as UsersIcon,
   ListChecks, ArrowLeft, MessageSquare, Video, NotebookPen, Wand2, Palette,
-
+  MicOff, UserX, Star, Clock, VenetianMask, DoorOpen,
 } from "lucide-react";
-import { format, formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow, formatDistanceStrict } from "date-fns";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +20,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { LiveVideoRoom } from "./LiveVideoRoom";
 import { ExitReflection } from "./ExitReflection";
 import { Whiteboard } from "./Whiteboard";
+import { AgendaBar, type AgendaItem } from "./AgendaBar";
+import { WaitingRoomPanel } from "./WaitingRoomPanel";
+import { BreakoutsPanel } from "./BreakoutsPanel";
 
 import { generateSessionSummary } from "@/lib/sessions.functions";
 import { EmojiStickerPicker } from "@/components/chat/EmojiStickerPicker";
@@ -43,13 +46,29 @@ type Session = {
   is_homework_help: boolean;
 };
 
+type SessionExtras = {
+  agenda: AgendaItem[];
+  spotlight_user_id: string | null;
+  started_at: string | null;
+  allow_anonymous: boolean;
+};
+
 type Profile = { id: string; display_name: string | null; avatar_url: string | null };
 type Message = { id: string; user_id: string; content: string; pinned: boolean; created_at: string };
 type Resource = { id: string; title: string; kind: string; url: string | null; file_path: string | null; created_at: string };
 type Poll = { id: string; question: string; options: string[]; closed: boolean; created_at: string };
 type PollVote = { poll_id: string; user_id: string; option_index: number };
 type HandRaise = { id: string; user_id: string; raised_at: string; resolved_at: string | null };
-type Participant = { id: string; user_id: string; role: string; joined_at: string; left_at: string | null };
+type Participant = {
+  id: string;
+  user_id: string;
+  role: string;
+  joined_at: string;
+  left_at: string | null;
+  muted: boolean;
+  removed: boolean;
+  anonymous_name: string | null;
+};
 
 export function SessionRoom({
   session,
@@ -64,26 +83,110 @@ export function SessionRoom({
   const isTutor = session.tutor_id === currentUserId;
   const [lowBandwidth, setLowBandwidth] = useState(false);
   const [reflectOpen, setReflectOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"video" | "chat" | "notes" | "board" | "resources" | "polls" | "people" | "summary">(
-    "video",
-  );
+  const [activeBreakoutId, setActiveBreakoutId] = useState<string | null>(null);
+  const [extras, setExtras] = useState<SessionExtras>({
+    agenda: [],
+    spotlight_user_id: null,
+    started_at: null,
+    allow_anonymous: true,
+  });
+  const [useAnon, setUseAnon] = useState(false);
+  const [anonName, setAnonName] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<
+    "video" | "chat" | "notes" | "board" | "resources" | "polls" | "people" | "breakouts" | "summary"
+  >("video");
+
+  // Load session extras (agenda/spotlight/started_at/allow_anonymous)
+  useEffect(() => {
+    supabase
+      .from("sessions")
+      .select("agenda, spotlight_user_id, started_at, allow_anonymous")
+      .eq("id", session.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setExtras({
+            agenda: (Array.isArray(data.agenda) ? data.agenda : []) as AgendaItem[],
+            spotlight_user_id: data.spotlight_user_id ?? null,
+            started_at: data.started_at ?? null,
+            allow_anonymous: data.allow_anonymous ?? true,
+          });
+        }
+      });
+    const ch = supabase
+      .channel(`sess-extras-${session.id}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "sessions", filter: `id=eq.${session.id}` },
+        (payload) => {
+          const n = payload.new as Record<string, unknown>;
+          setExtras((prev) => ({
+            agenda: Array.isArray(n.agenda) ? (n.agenda as AgendaItem[]) : prev.agenda,
+            spotlight_user_id: (n.spotlight_user_id as string | null) ?? null,
+            started_at: (n.started_at as string | null) ?? null,
+            allow_anonymous: (n.allow_anonymous as boolean) ?? true,
+          }));
+        },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [session.id]);
+
+  const effectiveDisplayName = useAnon && anonName ? anonName : myDisplayName;
+
 
 
   const leave = () => { if (isTutor) navigate({ to: "/dashboard" }); else setReflectOpen(true); };
 
-  // Auto-join as student
+  // Auto-join as student, and mark left_at on unmount so attendance duration is tracked
   useEffect(() => {
     if (isTutor) return;
     supabase
       .from("session_participants")
       .upsert(
-        { session_id: session.id, user_id: currentUserId, role: "student" },
-        { onConflict: "session_id,user_id", ignoreDuplicates: true },
+        {
+          session_id: session.id,
+          user_id: currentUserId,
+          role: "student",
+          anonymous_name: useAnon ? anonName : null,
+          left_at: null,
+        },
+        { onConflict: "session_id,user_id" },
       )
       .then(({ error }) => {
         if (error && !error.message.includes("duplicate")) console.warn(error);
       });
-  }, [isTutor, session.id, currentUserId]);
+    const onBeforeUnload = () => {
+      // Best-effort: mark leave time
+      supabase.from("session_participants").update({ left_at: new Date().toISOString() })
+        .eq("session_id", session.id).eq("user_id", currentUserId).then(() => {});
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      onBeforeUnload();
+    };
+  }, [isTutor, session.id, currentUserId, useAnon, anonName]);
+
+  // Enforce being kicked out if tutor marked me as removed
+  useEffect(() => {
+    if (isTutor) return;
+    const ch = supabase
+      .channel(`me-part-${session.id}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "session_participants", filter: `session_id=eq.${session.id}` },
+        (payload) => {
+          const n = payload.new as { user_id: string; removed: boolean } | undefined;
+          if (n && n.user_id === currentUserId && n.removed) {
+            toast.error("You were removed from the session.");
+            navigate({ to: "/dashboard" });
+          }
+        },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [isTutor, session.id, currentUserId, navigate]);
 
   const toggleLock = async () => {
     const { error } = await supabase
@@ -102,6 +205,17 @@ export function SessionRoom({
     if (error) toast.error(error.message);
   };
 
+  const toggleAnonymous = () => {
+    setUseAnon((prev) => {
+      const next = !prev;
+      if (next && !anonName) {
+        const pool = ["Lynx", "Otter", "Falcon", "Panda", "Fox", "Koala", "Heron", "Wolf", "Deer", "Owl"];
+        setAnonName(`Anon ${pool[Math.floor(Math.random() * pool.length)]}`);
+      }
+      return next;
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 border-b border-border/50 bg-background/80 backdrop-blur-xl">
@@ -117,11 +231,18 @@ export function SessionRoom({
                 {session.is_homework_help && <Badge variant="secondary" className="rounded-full">Homework</Badge>}
                 {session.locked && <Badge variant="destructive" className="rounded-full">Locked</Badge>}
                 {session.focus_mode && <Badge variant="secondary" className="rounded-full">Focus</Badge>}
+                {activeBreakoutId && <Badge className="rounded-full bg-primary/15 text-primary">Breakout</Badge>}
+                {useAnon && <Badge variant="secondary" className="rounded-full">Anon: {anonName}</Badge>}
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
+            {extras.allow_anonymous && !isTutor && (
+              <Button size="sm" variant="ghost" onClick={toggleAnonymous} title="Toggle anonymous name">
+                <VenetianMask className={`h-4 w-4 ${useAnon ? "text-primary" : ""}`} />
+              </Button>
+            )}
             <Button size="sm" variant="ghost" onClick={() => setLowBandwidth((v) => !v)} title="Low bandwidth mode">
               {lowBandwidth ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </Button>
@@ -140,22 +261,37 @@ export function SessionRoom({
       </header>
 
       <main className="mx-auto grid max-w-7xl gap-4 px-4 py-4 lg:grid-cols-[1fr_400px]">
-        {/* Left: video */}
-        <div className="min-h-[60vh] lg:sticky lg:top-20 lg:h-[calc(100vh-6rem)]">
-          <LiveVideoRoom sessionId={session.id} displayName={myDisplayName} lowBandwidth={lowBandwidth} />
+        {/* Left: video + agenda + waiting room */}
+        <div className="min-h-[60vh] lg:sticky lg:top-20 lg:h-[calc(100vh-6rem)] flex flex-col">
+          <AgendaBar sessionId={session.id} isTutor={isTutor} startedAt={extras.started_at} initialAgenda={extras.agenda} />
+          <WaitingRoomPanel sessionId={session.id} isTutor={isTutor} />
+          <div className="flex-1 min-h-[400px]">
+            <LiveVideoRoom
+              sessionId={session.id}
+              displayName={effectiveDisplayName}
+              lowBandwidth={lowBandwidth}
+              breakoutId={activeBreakoutId}
+            />
+          </div>
+          {activeBreakoutId && (
+            <div className="mt-2 rounded-xl border border-primary/30 bg-primary/5 p-2 text-center text-xs">
+              You're in a breakout room. <button onClick={() => setActiveBreakoutId(null)} className="font-semibold text-primary underline">Return to main room</button>
+            </div>
+          )}
         </div>
 
         {/* Right: tabs panel */}
         <div className="rounded-2xl border border-border/60 bg-card lg:h-[calc(100vh-6rem)] lg:sticky lg:top-20">
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="flex h-full flex-col">
-            <TabsList className="m-3 grid grid-cols-7 rounded-full">
-              <TabsTrigger value="video" className="rounded-full" title="Live"><Video className="h-4 w-4" /></TabsTrigger>
+            <TabsList className="m-3 grid grid-cols-8 rounded-full">
+              <TabsTrigger value="video" className="rounded-full" title="Intel"><Sparkles className="h-4 w-4" /></TabsTrigger>
               <TabsTrigger value="chat" className="rounded-full" title="Chat"><MessageSquare className="h-4 w-4" /></TabsTrigger>
               <TabsTrigger value="notes" className="rounded-full" title="Notes"><NotebookPen className="h-4 w-4" /></TabsTrigger>
               <TabsTrigger value="board" className="rounded-full" title="Whiteboard"><Palette className="h-4 w-4" /></TabsTrigger>
               <TabsTrigger value="resources" className="rounded-full" title="Resources"><FileText className="h-4 w-4" /></TabsTrigger>
               <TabsTrigger value="polls" className="rounded-full" title="Polls"><ListChecks className="h-4 w-4" /></TabsTrigger>
               <TabsTrigger value="people" className="rounded-full" title="People"><UsersIcon className="h-4 w-4" /></TabsTrigger>
+              <TabsTrigger value="breakouts" className="rounded-full" title="Breakouts"><DoorOpen className="h-4 w-4" /></TabsTrigger>
             </TabsList>
 
             <TabsContent value="video" className="flex-1 px-4 pb-4">
@@ -165,7 +301,7 @@ export function SessionRoom({
               <ChatPanel sessionId={session.id} userId={currentUserId} isTutor={isTutor} />
             </TabsContent>
             <TabsContent value="notes" className="flex-1 overflow-hidden px-4 pb-3">
-              <NotesPanel sessionId={session.id} userId={currentUserId} />
+              <NotesPanel sessionId={session.id} userId={currentUserId} startedAt={extras.started_at} />
             </TabsContent>
             <TabsContent value="board" className="flex-1 overflow-hidden px-3 pb-3">
               <Whiteboard sessionId={session.id} userId={currentUserId} />
@@ -177,15 +313,27 @@ export function SessionRoom({
               <PollsPanel sessionId={session.id} userId={currentUserId} isTutor={isTutor} />
             </TabsContent>
             <TabsContent value="people" className="flex-1 overflow-hidden px-4 pb-3">
-              <PeoplePanel sessionId={session.id} userId={currentUserId} isTutor={isTutor} />
+              <PeoplePanel
+                sessionId={session.id}
+                userId={currentUserId}
+                isTutor={isTutor}
+                spotlightId={extras.spotlight_user_id}
+              />
             </TabsContent>
-
-            <TabsContent value="people" className="flex-1 overflow-hidden px-4 pb-3">
-              <PeoplePanel sessionId={session.id} userId={currentUserId} isTutor={isTutor} />
+            <TabsContent value="breakouts" className="flex-1 overflow-hidden px-4 pb-3">
+              <BreakoutsPanel
+                sessionId={session.id}
+                userId={currentUserId}
+                isTutor={isTutor}
+                activeBreakoutId={activeBreakoutId}
+                onJoin={setActiveBreakoutId}
+                onLeave={() => setActiveBreakoutId(null)}
+              />
             </TabsContent>
           </Tabs>
         </div>
       </main>
+
 
       {/* Reactions bar (fixed bottom) */}
       <ReactionsBar sessionId={session.id} userId={currentUserId} />
@@ -364,7 +512,9 @@ function ChatPanel({ sessionId, userId, isTutor }: { sessionId: string; userId: 
 }
 
 /* ----------------------------- Notes panel ---------------------------- */
-function NotesPanel({ sessionId, userId }: { sessionId: string; userId: string }) {
+function NotesPanel({ sessionId, userId, startedAt }: { sessionId: string; userId: string; startedAt: string | null }) {
+  const sharedRef = useRef<HTMLTextAreaElement>(null);
+  const privateRef = useRef<HTMLTextAreaElement>(null);
   const [tab, setTab] = useState<"shared" | "private">("shared");
   const [shared, setShared] = useState("");
   const [privateText, setPrivateText] = useState("");
@@ -411,6 +561,27 @@ function NotesPanel({ sessionId, userId }: { sessionId: string; userId: string }
     }, 600);
   };
 
+  const insertTimestamp = () => {
+    if (!startedAt) { toast.info("Tutor hasn't started the session clock yet."); return; }
+    const secs = Math.max(0, Math.floor((Date.now() - new Date(startedAt).getTime()) / 1000));
+    const mm = Math.floor(secs / 60).toString().padStart(2, "0");
+    const ss = (secs % 60).toString().padStart(2, "0");
+    const stamp = `[${mm}:${ss}] `;
+    if (tab === "shared") {
+      const el = sharedRef.current;
+      const pos = el?.selectionStart ?? shared.length;
+      const next = shared.slice(0, pos) + stamp + shared.slice(pos);
+      onSharedChange(next);
+      requestAnimationFrame(() => el?.focus());
+    } else {
+      const el = privateRef.current;
+      const pos = el?.selectionStart ?? privateText.length;
+      const next = privateText.slice(0, pos) + stamp + privateText.slice(pos);
+      onPrivateChange(next);
+      requestAnimationFrame(() => el?.focus());
+    }
+  };
+
   return (
     <div className="flex h-full flex-col">
       <div className="mb-2 flex items-center justify-between">
@@ -418,14 +589,19 @@ function NotesPanel({ sessionId, userId }: { sessionId: string; userId: string }
           <button onClick={() => setTab("shared")} className={`rounded-full px-3 py-1 ${tab === "shared" ? "bg-background shadow-sm" : "text-muted-foreground"}`}>Shared</button>
           <button onClick={() => setTab("private")} className={`rounded-full px-3 py-1 ${tab === "private" ? "bg-background shadow-sm" : "text-muted-foreground"}`}>Private</button>
         </div>
-        <span className="text-[10px] text-muted-foreground">
-          {tab === "shared" ? (savingShared ? "Saving…" : "Auto-saves") : (savingPrivate ? "Saving…" : "Only you")}
-        </span>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="ghost" className="h-6 rounded-full px-2 text-[10px]" onClick={insertTimestamp} title="Insert timestamp">
+            <Clock className="mr-1 h-3 w-3" /> Timestamp
+          </Button>
+          <span className="text-[10px] text-muted-foreground">
+            {tab === "shared" ? (savingShared ? "Saving…" : "Auto-saves") : (savingPrivate ? "Saving…" : "Only you")}
+          </span>
+        </div>
       </div>
       {tab === "shared" ? (
-        <Textarea value={shared} onChange={(e) => onSharedChange(e.target.value)} placeholder="Collaborative class notes…" className="flex-1 resize-none" />
+        <Textarea ref={sharedRef} value={shared} onChange={(e) => onSharedChange(e.target.value)} placeholder="Collaborative class notes…  Tip: use Timestamp to link a moment in the video." className="flex-1 resize-none font-mono text-sm" />
       ) : (
-        <Textarea value={privateText} onChange={(e) => onPrivateChange(e.target.value)} placeholder="Your private notes (no one else sees these)…" className="flex-1 resize-none" />
+        <Textarea ref={privateRef} value={privateText} onChange={(e) => onPrivateChange(e.target.value)} placeholder="Your private notes (no one else sees these)…" className="flex-1 resize-none font-mono text-sm" />
       )}
     </div>
   );
@@ -667,15 +843,31 @@ function PollsPanel({ sessionId, userId, isTutor }: { sessionId: string; userId:
 }
 
 /* ----------------------------- People panel --------------------------- */
-function PeoplePanel({ sessionId, userId, isTutor }: { sessionId: string; userId: string; isTutor: boolean }) {
+function PeoplePanel({
+  sessionId,
+  userId,
+  isTutor,
+  spotlightId,
+}: {
+  sessionId: string;
+  userId: string;
+  isTutor: boolean;
+  spotlightId: string | null;
+}) {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
   const [hands, setHands] = useState<HandRaise[]>([]);
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     const loadParts = async () => {
       const { data } = await supabase.from("session_participants")
-        .select("id, user_id, role, joined_at, left_at")
+        .select("id, user_id, role, joined_at, left_at, muted, removed, anonymous_name")
         .eq("session_id", sessionId).order("joined_at");
       setParticipants((data ?? []) as Participant[]);
     };
@@ -714,6 +906,36 @@ function PeoplePanel({ sessionId, userId, isTutor }: { sessionId: string; userId
     await supabase.from("hand_raises").update({ resolved_at: new Date().toISOString() }).eq("id", id);
   };
 
+  const toggleMute = async (p: Participant) => {
+    await supabase.from("session_participants").update({ muted: !p.muted }).eq("id", p.id);
+    toast.info(p.muted ? "Unmuted" : "Muted");
+  };
+  const removeParticipant = async (p: Participant) => {
+    if (!confirm(`Remove ${nameFor(p)} from this session?`)) return;
+    await supabase.from("session_participants").update({
+      removed: true,
+      left_at: new Date().toISOString(),
+    }).eq("id", p.id);
+  };
+  const toggleSpotlight = async (p: Participant) => {
+    const next = spotlightId === p.user_id ? null : p.user_id;
+    await supabase.from("sessions").update({ spotlight_user_id: next }).eq("id", sessionId);
+  };
+
+  const nameFor = (p: Participant) =>
+    p.anonymous_name ?? profiles[p.user_id]?.display_name ?? "…";
+
+  const fmtDuration = (p: Participant) => {
+    const start = new Date(p.joined_at).getTime();
+    const end = p.left_at ? new Date(p.left_at).getTime() : now;
+    const mins = Math.max(0, Math.floor((end - start) / 60000));
+    if (mins < 1) return "just now";
+    return formatDistanceStrict(0, mins * 60000);
+  };
+
+  const present = participants.filter((p) => !p.left_at && !p.removed);
+  const gone = participants.filter((p) => p.left_at || p.removed);
+
   return (
     <div className="flex h-full flex-col">
       <Button onClick={raiseHand} size="sm" variant={myHand ? "default" : "outline"}
@@ -725,32 +947,80 @@ function PeoplePanel({ sessionId, userId, isTutor }: { sessionId: string; userId
         <div className="mb-3 rounded-xl border border-primary/20 bg-primary/5 p-2">
           <p className="mb-1 text-[10px] font-semibold uppercase text-primary">Hand raise queue</p>
           <ul className="space-y-1">
-            {hands.map((h) => (
-              <li key={h.id} className="flex items-center justify-between text-xs">
-                <span>{profiles[h.user_id]?.display_name ?? "…"}</span>
-                <span className="text-muted-foreground">{formatDistanceToNow(new Date(h.raised_at), { addSuffix: true })}</span>
-                {isTutor && <button onClick={() => resolveHand(h.id)}><X className="h-3 w-3" /></button>}
-              </li>
-            ))}
+            {hands.map((h) => {
+              const p = participants.find((x) => x.user_id === h.user_id);
+              return (
+                <li key={h.id} className="flex items-center justify-between text-xs">
+                  <span>{p ? nameFor(p) : "…"}</span>
+                  <span className="text-muted-foreground">{formatDistanceToNow(new Date(h.raised_at), { addSuffix: true })}</span>
+                  {isTutor && <button onClick={() => resolveHand(h.id)}><X className="h-3 w-3" /></button>}
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}
 
       <ScrollArea className="flex-1 pr-2">
+        <p className="mb-1 px-1 text-[10px] font-semibold uppercase text-muted-foreground">
+          In room · {present.length}
+        </p>
         <ul className="space-y-1.5">
-          {participants.map((p) => {
+          {present.map((p) => {
             const prof = profiles[p.user_id];
+            const isMe = p.user_id === userId;
+            const spotlit = spotlightId === p.user_id;
             return (
-              <li key={p.id} className="flex items-center gap-2 rounded-lg p-1.5 text-sm hover:bg-accent/30">
+              <li key={p.id} className={`group flex items-center gap-2 rounded-lg p-1.5 text-sm ${spotlit ? "bg-primary/10 ring-1 ring-primary/40" : "hover:bg-accent/30"}`}>
                 <div className="grid h-7 w-7 place-items-center rounded-full bg-brand-gradient text-[10px] font-semibold text-white">
-                  {(prof?.display_name ?? "?").slice(0, 1).toUpperCase()}
+                  {nameFor(p).slice(0, 1).toUpperCase()}
                 </div>
-                <span className="flex-1 truncate">{prof?.display_name ?? "…"}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="truncate">{nameFor(p)}{isMe && <span className="ml-1 text-[10px] text-muted-foreground">(you)</span>}</span>
+                    {p.anonymous_name && <Badge variant="outline" className="rounded-full text-[9px]">Anon</Badge>}
+                    {p.muted && <MicOff className="h-3 w-3 text-destructive" />}
+                    {spotlit && <Star className="h-3 w-3 fill-amber-400 text-amber-400" />}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">{fmtDuration(p)}</p>
+                </div>
                 {p.role === "tutor" && <Badge variant="secondary" className="rounded-full text-[10px]">Tutor</Badge>}
+                {isTutor && !isMe && p.role !== "tutor" && (
+                  <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                    <button title={spotlit ? "Remove spotlight" : "Spotlight"} onClick={() => toggleSpotlight(p)}>
+                      <Star className={`h-3.5 w-3.5 ${spotlit ? "fill-amber-400 text-amber-400" : "text-muted-foreground hover:text-amber-500"}`} />
+                    </button>
+                    <button title={p.muted ? "Unmute" : "Mute"} onClick={() => toggleMute(p)}>
+                      <MicOff className={`h-3.5 w-3.5 ${p.muted ? "text-destructive" : "text-muted-foreground hover:text-destructive"}`} />
+                    </button>
+                    <button title="Remove" onClick={() => removeParticipant(p)}>
+                      <UserX className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                    </button>
+                  </div>
+                )}
               </li>
             );
           })}
         </ul>
+
+        {gone.length > 0 && (
+          <>
+            <p className="mb-1 mt-4 px-1 text-[10px] font-semibold uppercase text-muted-foreground">
+              Left · {gone.length}
+            </p>
+            <ul className="space-y-1">
+              {gone.map((p) => (
+                <li key={p.id} className="flex items-center gap-2 rounded-lg p-1.5 text-xs text-muted-foreground">
+                  <div className="grid h-6 w-6 place-items-center rounded-full bg-muted text-[10px] font-semibold">
+                    {nameFor(p).slice(0, 1).toUpperCase()}
+                  </div>
+                  <span className="flex-1 truncate">{nameFor(p)}</span>
+                  <span>attended {fmtDuration(p)}</span>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
       </ScrollArea>
     </div>
   );

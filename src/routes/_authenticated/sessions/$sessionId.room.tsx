@@ -3,6 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SessionRoom } from "@/components/sessions/SessionRoom";
+import { WaitingRoomStandby } from "@/components/sessions/WaitingRoomPanel";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -32,6 +33,7 @@ function SessionRoomPage() {
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(true);
   const [denied, setDenied] = useState<string | null>(null);
+  const [needsWaiting, setNeedsWaiting] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -61,7 +63,8 @@ function SessionRoomPage() {
           .maybeSingle();
         if (!part) {
           if (s.locked) {
-            setDenied("This session is locked. Enrollment closed.");
+            // Route to waiting room instead of denying
+            setNeedsWaiting(true);
             setLoading(false);
             return;
           }
@@ -102,6 +105,17 @@ function SessionRoomPage() {
           </div>
         </div>
       </div>
+    );
+  }
+
+  if (needsWaiting) {
+    return (
+      <WaitingRoomStandby
+        sessionId={sessionId}
+        userId={userId}
+        displayName={displayName}
+        onApproved={() => setNeedsWaiting(false)}
+      />
     );
   }
 
