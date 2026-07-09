@@ -138,19 +138,55 @@ export function SessionRoom({
 
   const leave = () => { if (isTutor) navigate({ to: "/dashboard" }); else setReflectOpen(true); };
 
-  // Auto-join as student
+  // Auto-join as student, and mark left_at on unmount so attendance duration is tracked
   useEffect(() => {
     if (isTutor) return;
     supabase
       .from("session_participants")
       .upsert(
-        { session_id: session.id, user_id: currentUserId, role: "student" },
-        { onConflict: "session_id,user_id", ignoreDuplicates: true },
+        {
+          session_id: session.id,
+          user_id: currentUserId,
+          role: "student",
+          anonymous_name: useAnon ? anonName : null,
+          left_at: null,
+        },
+        { onConflict: "session_id,user_id" },
       )
       .then(({ error }) => {
         if (error && !error.message.includes("duplicate")) console.warn(error);
       });
-  }, [isTutor, session.id, currentUserId]);
+    const onBeforeUnload = () => {
+      // Best-effort: mark leave time
+      supabase.from("session_participants").update({ left_at: new Date().toISOString() })
+        .eq("session_id", session.id).eq("user_id", currentUserId).then(() => {});
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      onBeforeUnload();
+    };
+  }, [isTutor, session.id, currentUserId, useAnon, anonName]);
+
+  // Enforce being kicked out if tutor marked me as removed
+  useEffect(() => {
+    if (isTutor) return;
+    const ch = supabase
+      .channel(`me-part-${session.id}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "session_participants", filter: `session_id=eq.${session.id}` },
+        (payload) => {
+          const n = payload.new as { user_id: string; removed: boolean } | undefined;
+          if (n && n.user_id === currentUserId && n.removed) {
+            toast.error("You were removed from the session.");
+            navigate({ to: "/dashboard" });
+          }
+        },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [isTutor, session.id, currentUserId, navigate]);
 
   const toggleLock = async () => {
     const { error } = await supabase
@@ -169,6 +205,17 @@ export function SessionRoom({
     if (error) toast.error(error.message);
   };
 
+  const toggleAnonymous = () => {
+    setUseAnon((prev) => {
+      const next = !prev;
+      if (next && !anonName) {
+        const pool = ["Lynx", "Otter", "Falcon", "Panda", "Fox", "Koala", "Heron", "Wolf", "Deer", "Owl"];
+        setAnonName(`Anon ${pool[Math.floor(Math.random() * pool.length)]}`);
+      }
+      return next;
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 border-b border-border/50 bg-background/80 backdrop-blur-xl">
@@ -184,11 +231,18 @@ export function SessionRoom({
                 {session.is_homework_help && <Badge variant="secondary" className="rounded-full">Homework</Badge>}
                 {session.locked && <Badge variant="destructive" className="rounded-full">Locked</Badge>}
                 {session.focus_mode && <Badge variant="secondary" className="rounded-full">Focus</Badge>}
+                {activeBreakoutId && <Badge className="rounded-full bg-primary/15 text-primary">Breakout</Badge>}
+                {useAnon && <Badge variant="secondary" className="rounded-full">Anon: {anonName}</Badge>}
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
+            {extras.allow_anonymous && !isTutor && (
+              <Button size="sm" variant="ghost" onClick={toggleAnonymous} title="Toggle anonymous name">
+                <VenetianMask className={`h-4 w-4 ${useAnon ? "text-primary" : ""}`} />
+              </Button>
+            )}
             <Button size="sm" variant="ghost" onClick={() => setLowBandwidth((v) => !v)} title="Low bandwidth mode">
               {lowBandwidth ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </Button>
@@ -207,22 +261,37 @@ export function SessionRoom({
       </header>
 
       <main className="mx-auto grid max-w-7xl gap-4 px-4 py-4 lg:grid-cols-[1fr_400px]">
-        {/* Left: video */}
-        <div className="min-h-[60vh] lg:sticky lg:top-20 lg:h-[calc(100vh-6rem)]">
-          <LiveVideoRoom sessionId={session.id} displayName={myDisplayName} lowBandwidth={lowBandwidth} />
+        {/* Left: video + agenda + waiting room */}
+        <div className="min-h-[60vh] lg:sticky lg:top-20 lg:h-[calc(100vh-6rem)] flex flex-col">
+          <AgendaBar sessionId={session.id} isTutor={isTutor} startedAt={extras.started_at} initialAgenda={extras.agenda} />
+          <WaitingRoomPanel sessionId={session.id} isTutor={isTutor} />
+          <div className="flex-1 min-h-[400px]">
+            <LiveVideoRoom
+              sessionId={session.id}
+              displayName={effectiveDisplayName}
+              lowBandwidth={lowBandwidth}
+              breakoutId={activeBreakoutId}
+            />
+          </div>
+          {activeBreakoutId && (
+            <div className="mt-2 rounded-xl border border-primary/30 bg-primary/5 p-2 text-center text-xs">
+              You're in a breakout room. <button onClick={() => setActiveBreakoutId(null)} className="font-semibold text-primary underline">Return to main room</button>
+            </div>
+          )}
         </div>
 
         {/* Right: tabs panel */}
         <div className="rounded-2xl border border-border/60 bg-card lg:h-[calc(100vh-6rem)] lg:sticky lg:top-20">
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="flex h-full flex-col">
-            <TabsList className="m-3 grid grid-cols-7 rounded-full">
-              <TabsTrigger value="video" className="rounded-full" title="Live"><Video className="h-4 w-4" /></TabsTrigger>
+            <TabsList className="m-3 grid grid-cols-8 rounded-full">
+              <TabsTrigger value="video" className="rounded-full" title="Intel"><Sparkles className="h-4 w-4" /></TabsTrigger>
               <TabsTrigger value="chat" className="rounded-full" title="Chat"><MessageSquare className="h-4 w-4" /></TabsTrigger>
               <TabsTrigger value="notes" className="rounded-full" title="Notes"><NotebookPen className="h-4 w-4" /></TabsTrigger>
               <TabsTrigger value="board" className="rounded-full" title="Whiteboard"><Palette className="h-4 w-4" /></TabsTrigger>
               <TabsTrigger value="resources" className="rounded-full" title="Resources"><FileText className="h-4 w-4" /></TabsTrigger>
               <TabsTrigger value="polls" className="rounded-full" title="Polls"><ListChecks className="h-4 w-4" /></TabsTrigger>
               <TabsTrigger value="people" className="rounded-full" title="People"><UsersIcon className="h-4 w-4" /></TabsTrigger>
+              <TabsTrigger value="breakouts" className="rounded-full" title="Breakouts"><DoorOpen className="h-4 w-4" /></TabsTrigger>
             </TabsList>
 
             <TabsContent value="video" className="flex-1 px-4 pb-4">
@@ -232,7 +301,7 @@ export function SessionRoom({
               <ChatPanel sessionId={session.id} userId={currentUserId} isTutor={isTutor} />
             </TabsContent>
             <TabsContent value="notes" className="flex-1 overflow-hidden px-4 pb-3">
-              <NotesPanel sessionId={session.id} userId={currentUserId} />
+              <NotesPanel sessionId={session.id} userId={currentUserId} startedAt={extras.started_at} />
             </TabsContent>
             <TabsContent value="board" className="flex-1 overflow-hidden px-3 pb-3">
               <Whiteboard sessionId={session.id} userId={currentUserId} />
@@ -244,15 +313,27 @@ export function SessionRoom({
               <PollsPanel sessionId={session.id} userId={currentUserId} isTutor={isTutor} />
             </TabsContent>
             <TabsContent value="people" className="flex-1 overflow-hidden px-4 pb-3">
-              <PeoplePanel sessionId={session.id} userId={currentUserId} isTutor={isTutor} />
+              <PeoplePanel
+                sessionId={session.id}
+                userId={currentUserId}
+                isTutor={isTutor}
+                spotlightId={extras.spotlight_user_id}
+              />
             </TabsContent>
-
-            <TabsContent value="people" className="flex-1 overflow-hidden px-4 pb-3">
-              <PeoplePanel sessionId={session.id} userId={currentUserId} isTutor={isTutor} />
+            <TabsContent value="breakouts" className="flex-1 overflow-hidden px-4 pb-3">
+              <BreakoutsPanel
+                sessionId={session.id}
+                userId={currentUserId}
+                isTutor={isTutor}
+                activeBreakoutId={activeBreakoutId}
+                onJoin={setActiveBreakoutId}
+                onLeave={() => setActiveBreakoutId(null)}
+              />
             </TabsContent>
           </Tabs>
         </div>
       </main>
+
 
       {/* Reactions bar (fixed bottom) */}
       <ReactionsBar sessionId={session.id} userId={currentUserId} />
