@@ -3,6 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SessionRoom } from "@/components/sessions/SessionRoom";
+import { WaitingRoomStandby } from "@/components/sessions/WaitingRoomPanel";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
