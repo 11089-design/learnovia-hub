@@ -26,7 +26,6 @@ function ExplorePage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [query, setQuery] = useState("");
   const [catSlug, setCatSlug] = useState<string | null>(null);
-  const [kind, setKind] = useState<"all" | "free" | "paid">("all");
   const [hwOnly, setHwOnly] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
 
@@ -44,7 +43,6 @@ function ExplorePage() {
         .neq("status", "cancelled")
         .order("starts_at", { ascending: true, nullsFirst: false })
         .limit(60);
-      if (kind !== "all") q = q.eq("kind", kind);
       if (hwOnly) q = q.eq("is_homework_help", true);
       const { data } = await q;
       let rows = (data ?? []) as Array<SessionListItem & { tutor_id: string }>;
@@ -62,7 +60,7 @@ function ExplorePage() {
       }
       setSessions(rows.map((r) => ({ ...r, tutor: tutors[r.tutor_id] ?? null })));
     })();
-  }, [catSlug, kind, hwOnly, query]);
+  }, [catSlug, hwOnly, query]);
 
   return (
     <div className="min-h-screen bg-background">
