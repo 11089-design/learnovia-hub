@@ -34,7 +34,7 @@ type Day = { title: string; blueprint: string };
 type Verification = { id: string; subject: string; kind: string; status: string };
 
 function NewCoursePage() {
-  const { track } = Route.useSearch();
+  const { track } = Route.useSearch() as { track: Track };
   const navigate = useNavigate();
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
   const [verifs, setVerifs] = useState<Verification[]>([]);

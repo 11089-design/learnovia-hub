@@ -33,6 +33,9 @@ export function Navbar() {
 
           <nav className="hidden items-center gap-7 md:flex">
             <Link to="/explore" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Explore</Link>
+            <Link to="/training" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Training</Link>
+            <Link to="/workshops" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Workshops</Link>
+            <Link to="/kids" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Kids</Link>
             <Link to="/communities" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Communities</Link>
             <Link to="/safety" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Safety</Link>
           </nav>

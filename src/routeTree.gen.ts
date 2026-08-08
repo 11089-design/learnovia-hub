@@ -29,6 +29,8 @@ import { Route as AuthenticatedUsersUserIdRouteImport } from './routes/_authenti
 import { Route as AuthenticatedSessionsNewRouteImport } from './routes/_authenticated/sessions/new'
 import { Route as AuthenticatedSessionsSessionIdRouteImport } from './routes/_authenticated/sessions/$sessionId'
 import { Route as AuthenticatedMessagesThreadIdRouteImport } from './routes/_authenticated/messages/$threadId'
+import { Route as AuthenticatedCoursesNewRouteImport } from './routes/_authenticated/courses/new'
+import { Route as AuthenticatedCoursesSlugRouteImport } from './routes/_authenticated/courses/$slug'
 import { Route as AuthenticatedCommunitiesNewRouteImport } from './routes/_authenticated/communities/new'
 import { Route as AuthenticatedCommunitiesSlugRouteImport } from './routes/_authenticated/communities/$slug'
 import { Route as AuthenticatedSessionsSessionIdRoomRouteImport } from './routes/_authenticated/sessions/$sessionId.room'
@@ -139,6 +141,17 @@ const AuthenticatedMessagesThreadIdRoute =
     path: '/messages/$threadId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCoursesNewRoute = AuthenticatedCoursesNewRouteImport.update({
+  id: '/courses/new',
+  path: '/courses/new',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCoursesSlugRoute =
+  AuthenticatedCoursesSlugRouteImport.update({
+    id: '/courses/$slug',
+    path: '/courses/$slug',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCommunitiesNewRoute =
   AuthenticatedCommunitiesNewRouteImport.update({
     id: '/communities/new',
@@ -181,6 +194,8 @@ export interface FileRoutesByFullPath {
   '/verify': typeof AuthenticatedVerifyRoute
   '/communities/$slug': typeof AuthenticatedCommunitiesSlugRoute
   '/communities/new': typeof AuthenticatedCommunitiesNewRoute
+  '/courses/$slug': typeof AuthenticatedCoursesSlugRoute
+  '/courses/new': typeof AuthenticatedCoursesNewRoute
   '/messages/$threadId': typeof AuthenticatedMessagesThreadIdRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRouteWithChildren
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
@@ -206,6 +221,8 @@ export interface FileRoutesByTo {
   '/verify': typeof AuthenticatedVerifyRoute
   '/communities/$slug': typeof AuthenticatedCommunitiesSlugRoute
   '/communities/new': typeof AuthenticatedCommunitiesNewRoute
+  '/courses/$slug': typeof AuthenticatedCoursesSlugRoute
+  '/courses/new': typeof AuthenticatedCoursesNewRoute
   '/messages/$threadId': typeof AuthenticatedMessagesThreadIdRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRouteWithChildren
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
@@ -233,6 +250,8 @@ export interface FileRoutesById {
   '/_authenticated/verify': typeof AuthenticatedVerifyRoute
   '/_authenticated/communities/$slug': typeof AuthenticatedCommunitiesSlugRoute
   '/_authenticated/communities/new': typeof AuthenticatedCommunitiesNewRoute
+  '/_authenticated/courses/$slug': typeof AuthenticatedCoursesSlugRoute
+  '/_authenticated/courses/new': typeof AuthenticatedCoursesNewRoute
   '/_authenticated/messages/$threadId': typeof AuthenticatedMessagesThreadIdRoute
   '/_authenticated/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRouteWithChildren
   '/_authenticated/sessions/new': typeof AuthenticatedSessionsNewRoute
@@ -260,6 +279,8 @@ export interface FileRouteTypes {
     | '/verify'
     | '/communities/$slug'
     | '/communities/new'
+    | '/courses/$slug'
+    | '/courses/new'
     | '/messages/$threadId'
     | '/sessions/$sessionId'
     | '/sessions/new'
@@ -285,6 +306,8 @@ export interface FileRouteTypes {
     | '/verify'
     | '/communities/$slug'
     | '/communities/new'
+    | '/courses/$slug'
+    | '/courses/new'
     | '/messages/$threadId'
     | '/sessions/$sessionId'
     | '/sessions/new'
@@ -311,6 +334,8 @@ export interface FileRouteTypes {
     | '/_authenticated/verify'
     | '/_authenticated/communities/$slug'
     | '/_authenticated/communities/new'
+    | '/_authenticated/courses/$slug'
+    | '/_authenticated/courses/new'
     | '/_authenticated/messages/$threadId'
     | '/_authenticated/sessions/$sessionId'
     | '/_authenticated/sessions/new'
@@ -474,6 +499,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMessagesThreadIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/courses/new': {
+      id: '/_authenticated/courses/new'
+      path: '/courses/new'
+      fullPath: '/courses/new'
+      preLoaderRoute: typeof AuthenticatedCoursesNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/courses/$slug': {
+      id: '/_authenticated/courses/$slug'
+      path: '/courses/$slug'
+      fullPath: '/courses/$slug'
+      preLoaderRoute: typeof AuthenticatedCoursesSlugRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/communities/new': {
       id: '/_authenticated/communities/new'
       path: '/communities/new'
@@ -532,6 +571,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedVerifyRoute: typeof AuthenticatedVerifyRoute
   AuthenticatedCommunitiesSlugRoute: typeof AuthenticatedCommunitiesSlugRoute
   AuthenticatedCommunitiesNewRoute: typeof AuthenticatedCommunitiesNewRoute
+  AuthenticatedCoursesSlugRoute: typeof AuthenticatedCoursesSlugRoute
+  AuthenticatedCoursesNewRoute: typeof AuthenticatedCoursesNewRoute
   AuthenticatedMessagesThreadIdRoute: typeof AuthenticatedMessagesThreadIdRoute
   AuthenticatedSessionsSessionIdRoute: typeof AuthenticatedSessionsSessionIdRouteWithChildren
   AuthenticatedSessionsNewRoute: typeof AuthenticatedSessionsNewRoute
@@ -548,6 +589,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedVerifyRoute: AuthenticatedVerifyRoute,
   AuthenticatedCommunitiesSlugRoute: AuthenticatedCommunitiesSlugRoute,
   AuthenticatedCommunitiesNewRoute: AuthenticatedCommunitiesNewRoute,
+  AuthenticatedCoursesSlugRoute: AuthenticatedCoursesSlugRoute,
+  AuthenticatedCoursesNewRoute: AuthenticatedCoursesNewRoute,
   AuthenticatedMessagesThreadIdRoute: AuthenticatedMessagesThreadIdRoute,
   AuthenticatedSessionsSessionIdRoute:
     AuthenticatedSessionsSessionIdRouteWithChildren,
