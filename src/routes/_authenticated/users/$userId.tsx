@@ -280,7 +280,7 @@ function SessionRow({ s }: { s: SessionItem }) {
         <div className="min-w-0">
           <p className="truncate font-medium">{s.title}</p>
           <p className="text-xs text-muted-foreground">
-            {s.starts_at ? format(new Date(s.starts_at), "MMM d, h:mm a") : "No date"} · {s.kind === "free" ? "Free" : "Paid"}
+            {s.starts_at ? format(new Date(s.starts_at), "MMM d, h:mm a") : "No date"} · Free
           </p>
         </div>
         <Badge variant="outline" className="rounded-full capitalize">{s.status}</Badge>

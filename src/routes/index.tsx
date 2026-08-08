@@ -137,7 +137,7 @@ function HowItWorks() {
   const steps = [
     { icon: GraduationCap, title: "Learn", body: "Browse peer-led sessions in subjects you love. Ask doubts, join groups, follow your interests.", color: "from-brand to-lavender" },
     { icon: Users, title: "Teach", body: "Share what you're best at. Host free sessions, build your audience, earn ratings and badges.", color: "from-lavender to-mint" },
-    { icon: Trophy, title: "Earn", body: "Unlock paid sessions after 5 free sessions and a 4★ rating. Safely monetize with parental consent under 18.", color: "from-mint to-brand" },
+    { icon: Trophy, title: "Level up", body: "Earn badges, streaks and a public trust score as you teach. Everything on Learnova is 100% free — forever.", color: "from-mint to-brand" },
   ];
   return (
     <Section id="how" eyebrow="How it works" title="Three steps. Endless growth.">
@@ -297,7 +297,7 @@ function Safety() {
 function Testimonials() {
   const items = [
     { who: "Aanya, learner · age 14", quote: "I went from scared of math to teaching a study group. The community is unreal." },
-    { who: "Kabir, tutor · age 17", quote: "Hosted 50+ sessions before my first paid one. The trust system actually makes me feel legit." },
+    { who: "Kabir, tutor · age 17", quote: "Hosted 50+ sessions here. The trust score and badges actually make me feel legit." },
     { who: "Priya, parent", quote: "I love that I get visibility, consent matters, and my kid is learning from real peers — not strangers." },
   ];
   return (
