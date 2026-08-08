@@ -9,6 +9,8 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WorkshopsRouteImport } from './routes/workshops'
+import { Route as TrainingRouteImport } from './routes/training'
 import { Route as SafetyRouteImport } from './routes/safety'
 import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as CommunitiesRouteImport } from './routes/communities'
@@ -30,6 +32,16 @@ import { Route as AuthenticatedCommunitiesSlugRouteImport } from './routes/_auth
 import { Route as AuthenticatedSessionsSessionIdRoomRouteImport } from './routes/_authenticated/sessions/$sessionId.room'
 import { Route as AuthenticatedSessionsSessionIdEditRouteImport } from './routes/_authenticated/sessions/$sessionId.edit'
 
+const WorkshopsRoute = WorkshopsRouteImport.update({
+  id: '/workshops',
+  path: '/workshops',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TrainingRoute = TrainingRouteImport.update({
+  id: '/training',
+  path: '/training',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SafetyRoute = SafetyRouteImport.update({
   id: '/safety',
   path: '/safety',
@@ -146,6 +158,8 @@ export interface FileRoutesByFullPath {
   '/communities': typeof CommunitiesRoute
   '/explore': typeof ExploreRoute
   '/safety': typeof SafetyRoute
+  '/training': typeof TrainingRoute
+  '/workshops': typeof WorkshopsRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
@@ -167,6 +181,8 @@ export interface FileRoutesByTo {
   '/communities': typeof CommunitiesRoute
   '/explore': typeof ExploreRoute
   '/safety': typeof SafetyRoute
+  '/training': typeof TrainingRoute
+  '/workshops': typeof WorkshopsRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
@@ -190,6 +206,8 @@ export interface FileRoutesById {
   '/communities': typeof CommunitiesRoute
   '/explore': typeof ExploreRoute
   '/safety': typeof SafetyRoute
+  '/training': typeof TrainingRoute
+  '/workshops': typeof WorkshopsRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/leaderboard': typeof AuthenticatedLeaderboardRoute
@@ -213,6 +231,8 @@ export interface FileRouteTypes {
     | '/communities'
     | '/explore'
     | '/safety'
+    | '/training'
+    | '/workshops'
     | '/admin'
     | '/dashboard'
     | '/leaderboard'
@@ -234,6 +254,8 @@ export interface FileRouteTypes {
     | '/communities'
     | '/explore'
     | '/safety'
+    | '/training'
+    | '/workshops'
     | '/admin'
     | '/dashboard'
     | '/leaderboard'
@@ -256,6 +278,8 @@ export interface FileRouteTypes {
     | '/communities'
     | '/explore'
     | '/safety'
+    | '/training'
+    | '/workshops'
     | '/_authenticated/admin'
     | '/_authenticated/dashboard'
     | '/_authenticated/leaderboard'
@@ -279,10 +303,26 @@ export interface RootRouteChildren {
   CommunitiesRoute: typeof CommunitiesRoute
   ExploreRoute: typeof ExploreRoute
   SafetyRoute: typeof SafetyRoute
+  TrainingRoute: typeof TrainingRoute
+  WorkshopsRoute: typeof WorkshopsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/workshops': {
+      id: '/workshops'
+      path: '/workshops'
+      fullPath: '/workshops'
+      preLoaderRoute: typeof WorkshopsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/training': {
+      id: '/training'
+      path: '/training'
+      fullPath: '/training'
+      preLoaderRoute: typeof TrainingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/safety': {
       id: '/safety'
       path: '/safety'
@@ -485,6 +525,8 @@ const rootRouteChildren: RootRouteChildren = {
   CommunitiesRoute: CommunitiesRoute,
   ExploreRoute: ExploreRoute,
   SafetyRoute: SafetyRoute,
+  TrainingRoute: TrainingRoute,
+  WorkshopsRoute: WorkshopsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
