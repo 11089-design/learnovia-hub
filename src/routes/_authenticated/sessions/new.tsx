@@ -22,14 +22,12 @@ function NewSessionPage() {
   const navigate = useNavigate();
   const [categories, setCategories] = useState<Category[]>([]);
   const [saving, setSaving] = useState(false);
-  const [canCharge, setCanCharge] = useState(false);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState<string>("none");
   const [format, setFormat] = useState<"group" | "one_on_one">("group");
-  const [kind, setKind] = useState<"free" | "paid">("free");
-  const [price, setPrice] = useState("0");
+  const [customCategory, setCustomCategory] = useState("");
   const [language, setLanguage] = useState("English");
   const [maxP, setMaxP] = useState("20");
   const [startsAt, setStartsAt] = useState("");
@@ -40,11 +38,6 @@ function NewSessionPage() {
 
   useEffect(() => {
     supabase.from("categories").select("id, name, slug").order("name").then(({ data }) => setCategories(data ?? []));
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (!data.user) return;
-      const { data: p } = await supabase.from("profiles").select("can_charge").eq("id", data.user.id).maybeSingle();
-      setCanCharge(p?.can_charge ?? false);
-    });
   }, []);
 
   const submit = async (e: React.FormEvent) => {
@@ -53,16 +46,36 @@ function NewSessionPage() {
     try {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("Not signed in");
+
+      // Resolve category — "other" creates (or reuses) a category from what the tutor typed
+      let resolvedCategoryId: string | null = categoryId === "none" ? null : categoryId;
+      if (categoryId === "other") {
+        const label = customCategory.trim();
+        if (!label) throw new Error("Please name your category");
+        const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+        const { data: existing } = await supabase.from("categories").select("id").eq("slug", slug).maybeSingle();
+        if (existing) {
+          resolvedCategoryId = existing.id;
+        } else {
+          const { data: created, error: catErr } = await supabase
+            .from("categories")
+            .insert({ slug, name: label, kind: "hobby", created_by: userData.user.id })
+            .select("id")
+            .single();
+          if (catErr) throw catErr;
+          resolvedCategoryId = created.id;
+        }
+      }
       const { data, error } = await supabase
         .from("sessions")
         .insert({
           tutor_id: userData.user.id,
           title: title.trim(),
           description: description.trim() || null,
-          category_id: categoryId === "none" ? null : categoryId,
+          category_id: resolvedCategoryId,
           format,
-          kind,
-          price_cents: kind === "paid" ? Math.round(parseFloat(price || "0") * 100) : 0,
+          kind: "free",
+          price_cents: 0,
           language,
           max_participants: Math.max(1, parseInt(maxP || "1", 10)),
           starts_at: startsAt || null,
@@ -123,8 +136,21 @@ function NewSessionPage() {
                 <SelectContent>
                   <SelectItem value="none">No category</SelectItem>
                   {categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  <SelectItem value="other">Other — teach anything ✨</SelectItem>
                 </SelectContent>
               </Select>
+              {categoryId === "other" && (
+                <Input
+                  autoFocus
+                  value={customCategory}
+                  onChange={(e) => setCustomCategory(e.target.value)}
+                  placeholder="e.g. Crocheting, Beatboxing, Chess openings…"
+                  className="mt-2"
+                />
+              )}
+              {categoryId === "other" && (
+                <p className="text-xs text-muted-foreground">This becomes a real category others can browse.</p>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label>Format</Label>
@@ -138,25 +164,9 @@ function NewSessionPage() {
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label>Type</Label>
-              <Select value={kind} onValueChange={(v) => setKind(v as "free" | "paid")} disabled={!canCharge && kind === "free"}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="free">Free</SelectItem>
-                  <SelectItem value="paid" disabled={!canCharge}>
-                    Paid {!canCharge && "(complete 5 free sessions w/ 4★+ to unlock)"}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {kind === "paid" && (
-              <div className="space-y-1.5">
-                <Label htmlFor="price">Price (USD)</Label>
-                <Input id="price" type="number" min={0} step="0.5" value={price} onChange={(e) => setPrice(e.target.value)} />
-              </div>
-            )}
+          <div className="rounded-2xl border border-primary/25 bg-primary/5 px-4 py-3 text-sm">
+            <span className="font-semibold text-primary">100% free session.</span>{" "}
+            <span className="text-muted-foreground">Learnova has no payments — every session you host is free for learners.</span>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-3">

@@ -35,12 +35,7 @@ export function SessionCard({ s }: { s: SessionListItem }) {
         <Badge variant="outline" className="rounded-full capitalize">
           {s.format === "one_on_one" ? "1-on-1" : "Group"}
         </Badge>
-        <Badge
-          variant={s.kind === "free" ? "secondary" : "default"}
-          className={`rounded-full ${s.kind === "paid" ? "bg-brand-gradient text-white" : ""}`}
-        >
-          {s.kind === "free" ? "Free" : `$${(s.price_cents / 100).toFixed(0)}`}
-        </Badge>
+        <Badge variant="secondary" className="rounded-full">Free</Badge>
       </div>
 
       <h3 className="line-clamp-2 text-base font-semibold leading-tight group-hover:gradient-text">

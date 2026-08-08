@@ -94,10 +94,6 @@ function SessionDetailPage() {
   const enroll = async () => {
     if (!userId || !session) return;
     if (session.locked) { toast.error("This session is locked."); return; }
-    if (session.kind === "paid") {
-      toast.error("Paid sessions aren't checkout-enabled yet.");
-      return;
-    }
     setEnrolling(true);
     const { error } = await supabase
       .from("session_participants")
@@ -157,10 +153,7 @@ function SessionDetailPage() {
               <Badge variant="outline" className="rounded-full capitalize">
                 {session.format === "one_on_one" ? "1-on-1" : "Group"}
               </Badge>
-              <Badge className={`rounded-full ${session.kind === "paid" ? "bg-brand-gradient text-white" : ""}`}
-                variant={session.kind === "paid" ? "default" : "secondary"}>
-                {session.kind === "free" ? "Free" : `$${(session.price_cents / 100).toFixed(0)}`}
-              </Badge>
+              <Badge variant="secondary" className="rounded-full">Always free</Badge>
               {session.level && <Badge variant="outline" className="rounded-full capitalize">{session.level}</Badge>}
               {session.locked && <Badge variant="destructive" className="rounded-full"><Lock className="mr-1 h-3 w-3" />Locked</Badge>}
             </div>
@@ -253,7 +246,7 @@ function SessionDetailPage() {
             <div className="glass space-y-4 rounded-2xl p-5 shadow-soft">
               <div>
                 <p className="text-3xl font-bold">
-                  {session.kind === "free" ? "Free" : `$${(session.price_cents / 100).toFixed(0)}`}
+                  Free
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {session.format === "one_on_one" ? "1-on-1 with tutor" : `Group up to ${session.max_participants}`}
@@ -293,12 +286,11 @@ function SessionDetailPage() {
               ) : (
                 <Button
                   className="w-full rounded-full bg-brand-gradient text-white"
-                  disabled={enrolling || session.locked || (session.kind === "paid")}
+                  disabled={enrolling || session.locked}
                   onClick={enroll}
                 >
                   {enrolling ? <Loader2 className="h-4 w-4 animate-spin" /> :
                     session.locked ? "Locked" :
-                    session.kind === "paid" ? "Paid (coming soon)" :
                     "Enroll now"}
                 </Button>
               )}

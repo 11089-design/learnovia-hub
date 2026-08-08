@@ -2,7 +2,9 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { supabase } from "@/integrations/supabase/client";
+
 
 export function Navbar() {
   const navigate = useNavigate();
@@ -29,14 +31,19 @@ export function Navbar() {
             </span>
           </Link>
 
-          <nav className="hidden items-center gap-8 md:flex">
-            <a href="#how" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">How it works</a>
-            <a href="#sessions" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Sessions</a>
+          <nav className="hidden items-center gap-7 md:flex">
+            <Link to="/explore" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Explore</Link>
+            <Link to="/training" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Training</Link>
+            <Link to="/workshops" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Workshops</Link>
+            <Link to="/kids" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Kids</Link>
             <Link to="/communities" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Communities</Link>
             <Link to="/safety" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Safety</Link>
           </nav>
 
+
           <div className="flex items-center gap-2">
+            <ThemeSwitcher />
+
             {signedIn ? (
               <Button
                 size="sm"

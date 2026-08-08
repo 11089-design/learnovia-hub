@@ -259,7 +259,7 @@ function DashboardPage() {
                   <span className="font-semibold">{Number(profile.avg_rating).toFixed(2)} ★</span>
                 </div>
                 <p className="pt-2 text-xs text-muted-foreground">
-                  {profile.can_charge ? "🎉 You're unlocked to host paid sessions." : "Teach 5 free sessions and keep a 4★+ rating to unlock paid sessions."}
+                  {profile.free_sessions_taught >= 5 ? "🎉 Trusted tutor — your profile now shows a verified trust badge." : "Teach 5 sessions and keep a 4★+ rating to earn your Trusted Tutor badge. Learnova is free for everyone, always."}
                 </p>
               </div>
             </Card>

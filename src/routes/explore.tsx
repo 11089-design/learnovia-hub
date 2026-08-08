@@ -26,7 +26,6 @@ function ExplorePage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [query, setQuery] = useState("");
   const [catSlug, setCatSlug] = useState<string | null>(null);
-  const [kind, setKind] = useState<"all" | "free" | "paid">("all");
   const [hwOnly, setHwOnly] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
 
@@ -44,7 +43,6 @@ function ExplorePage() {
         .neq("status", "cancelled")
         .order("starts_at", { ascending: true, nullsFirst: false })
         .limit(60);
-      if (kind !== "all") q = q.eq("kind", kind);
       if (hwOnly) q = q.eq("is_homework_help", true);
       const { data } = await q;
       let rows = (data ?? []) as Array<SessionListItem & { tutor_id: string }>;
@@ -62,7 +60,7 @@ function ExplorePage() {
       }
       setSessions(rows.map((r) => ({ ...r, tutor: tutors[r.tutor_id] ?? null })));
     })();
-  }, [catSlug, kind, hwOnly, query]);
+  }, [catSlug, hwOnly, query]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -89,19 +87,9 @@ function ExplorePage() {
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input className="pl-9" placeholder="Search by topic, title…" value={query} onChange={(e) => setQuery(e.target.value)} />
             </div>
-            <div className="flex flex-wrap gap-1.5">
-              {["all", "free", "paid"].map((k) => (
-                <button
-                  key={k}
-                  onClick={() => setKind(k as "all" | "free" | "paid")}
-                  className={`rounded-full border px-3 py-1 text-xs capitalize transition ${
-                    kind === k ? "border-primary bg-primary text-primary-foreground" : "border-border hover:border-primary/40"
-                  }`}
-                >
-                  {k}
-                </button>
-              ))}
-            </div>
+            <span className="rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+              Every session is free
+            </span>
             <button
               onClick={() => setHwOnly((v) => !v)}
               className={`rounded-full border px-3 py-1 text-xs transition ${

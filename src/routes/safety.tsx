@@ -16,7 +16,7 @@ export const Route = createFileRoute("/safety")({
 
 const pillars = [
   { icon: Users, title: "Parent / guardian consent", body: "Anyone under 18 needs guardian consent before monetizing sessions or unlocking certain features." },
-  { icon: ShieldCheck, title: "Verified tutor progression", body: "New tutors only run free sessions until they earn 5 sessions and a 4★ rating. Paid sessions unlock after trust is built." },
+  { icon: ShieldCheck, title: "Verified tutor progression", body: "Every session on Learnova is free, always. Tutors build a public trust score from sessions taught and learner ratings, so you always know who you’re learning from." },
   { icon: Flag, title: "Reporting & AI moderation", body: "Offensive language is auto-flagged. One tap reports any user, session, or community for review." },
   { icon: Lock, title: "Safe communication", body: "External contact sharing is blocked. Messaging is moderated and tied to sessions, not private DMs by default." },
 ];

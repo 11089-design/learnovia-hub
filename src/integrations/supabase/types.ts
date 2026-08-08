@@ -354,6 +354,248 @@ export type Database = {
           },
         ]
       }
+      course_attendance: {
+        Row: {
+          course_day_id: string
+          course_id: string
+          created_at: string
+          id: string
+          marked_by: string | null
+          note: string | null
+          notified_at: string | null
+          status: Database["public"]["Enums"]["attendance_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          course_day_id: string
+          course_id: string
+          created_at?: string
+          id?: string
+          marked_by?: string | null
+          note?: string | null
+          notified_at?: string | null
+          status?: Database["public"]["Enums"]["attendance_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          course_day_id?: string
+          course_id?: string
+          created_at?: string
+          id?: string
+          marked_by?: string | null
+          note?: string | null
+          notified_at?: string | null
+          status?: Database["public"]["Enums"]["attendance_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_attendance_course_day_id_fkey"
+            columns: ["course_day_id"]
+            isOneToOne: false
+            referencedRelation: "course_days"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_attendance_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_days: {
+        Row: {
+          blueprint: string | null
+          course_id: string
+          created_at: string
+          day_number: number
+          duration_minutes: number
+          id: string
+          objectives: string[]
+          session_id: string | null
+          starts_at: string | null
+          title: string
+        }
+        Insert: {
+          blueprint?: string | null
+          course_id: string
+          created_at?: string
+          day_number: number
+          duration_minutes?: number
+          id?: string
+          objectives?: string[]
+          session_id?: string | null
+          starts_at?: string | null
+          title: string
+        }
+        Update: {
+          blueprint?: string | null
+          course_id?: string
+          created_at?: string
+          day_number?: number
+          duration_minutes?: number
+          id?: string
+          objectives?: string[]
+          session_id?: string | null
+          starts_at?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_days_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_days_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_enrollments: {
+        Row: {
+          absences: number
+          course_id: string
+          created_at: string
+          id: string
+          status: Database["public"]["Enums"]["enrollment_status"]
+          user_id: string
+        }
+        Insert: {
+          absences?: number
+          course_id: string
+          created_at?: string
+          id?: string
+          status?: Database["public"]["Enums"]["enrollment_status"]
+          user_id: string
+        }
+        Update: {
+          absences?: number
+          course_id?: string
+          created_at?: string
+          id?: string
+          status?: Database["public"]["Enums"]["enrollment_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_enrollments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      courses: {
+        Row: {
+          age_max: number | null
+          age_min: number | null
+          attendance_policy: string
+          category_id: string | null
+          cover_url: string | null
+          created_at: string
+          description: string | null
+          enrolled_count: number
+          host_id: string
+          id: string
+          language: string
+          level: string | null
+          max_absences: number
+          outcomes: string[]
+          peer_led: boolean
+          requirements: string[]
+          seats: number
+          slug: string
+          starts_on: string | null
+          status: Database["public"]["Enums"]["course_status"]
+          tagline: string | null
+          title: string
+          track: Database["public"]["Enums"]["learn_track"]
+          updated_at: string
+          verification_id: string | null
+        }
+        Insert: {
+          age_max?: number | null
+          age_min?: number | null
+          attendance_policy?: string
+          category_id?: string | null
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          enrolled_count?: number
+          host_id: string
+          id?: string
+          language?: string
+          level?: string | null
+          max_absences?: number
+          outcomes?: string[]
+          peer_led?: boolean
+          requirements?: string[]
+          seats?: number
+          slug: string
+          starts_on?: string | null
+          status?: Database["public"]["Enums"]["course_status"]
+          tagline?: string | null
+          title: string
+          track?: Database["public"]["Enums"]["learn_track"]
+          updated_at?: string
+          verification_id?: string | null
+        }
+        Update: {
+          age_max?: number | null
+          age_min?: number | null
+          attendance_policy?: string
+          category_id?: string | null
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          enrolled_count?: number
+          host_id?: string
+          id?: string
+          language?: string
+          level?: string | null
+          max_absences?: number
+          outcomes?: string[]
+          peer_led?: boolean
+          requirements?: string[]
+          seats?: number
+          slug?: string
+          starts_on?: string | null
+          status?: Database["public"]["Enums"]["course_status"]
+          tagline?: string | null
+          title?: string
+          track?: Database["public"]["Enums"]["learn_track"]
+          updated_at?: string
+          verification_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "courses_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "courses_verification_id_fkey"
+            columns: ["verification_id"]
+            isOneToOne: false
+            referencedRelation: "tutor_verifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       direct_messages: {
         Row: {
           content: string
@@ -1058,6 +1300,7 @@ export type Database = {
           agenda: Json
           allow_anonymous: boolean
           category_id: string | null
+          course_day_id: string | null
           cover_url: string | null
           created_at: string
           description: string | null
@@ -1073,12 +1316,14 @@ export type Database = {
           max_participants: number
           meeting_room_name: string
           outcomes: string[]
+          peer_led: boolean
           price_cents: number
           spotlight_user_id: string | null
           started_at: string | null
           starts_at: string | null
           status: Database["public"]["Enums"]["session_status"]
           title: string
+          track: Database["public"]["Enums"]["learn_track"]
           tutor_id: string
           updated_at: string
         }
@@ -1086,6 +1331,7 @@ export type Database = {
           agenda?: Json
           allow_anonymous?: boolean
           category_id?: string | null
+          course_day_id?: string | null
           cover_url?: string | null
           created_at?: string
           description?: string | null
@@ -1101,12 +1347,14 @@ export type Database = {
           max_participants?: number
           meeting_room_name?: string
           outcomes?: string[]
+          peer_led?: boolean
           price_cents?: number
           spotlight_user_id?: string | null
           started_at?: string | null
           starts_at?: string | null
           status?: Database["public"]["Enums"]["session_status"]
           title: string
+          track?: Database["public"]["Enums"]["learn_track"]
           tutor_id: string
           updated_at?: string
         }
@@ -1114,6 +1362,7 @@ export type Database = {
           agenda?: Json
           allow_anonymous?: boolean
           category_id?: string | null
+          course_day_id?: string | null
           cover_url?: string | null
           created_at?: string
           description?: string | null
@@ -1129,12 +1378,14 @@ export type Database = {
           max_participants?: number
           meeting_room_name?: string
           outcomes?: string[]
+          peer_led?: boolean
           price_cents?: number
           spotlight_user_id?: string | null
           started_at?: string | null
           starts_at?: string | null
           status?: Database["public"]["Enums"]["session_status"]
           title?: string
+          track?: Database["public"]["Enums"]["learn_track"]
           tutor_id?: string
           updated_at?: string
         }
@@ -1199,6 +1450,54 @@ export type Database = {
           updated_at?: string
           user_id?: string
           week_of?: string
+        }
+        Relationships: []
+      }
+      tutor_verifications: {
+        Row: {
+          ai_confidence: number
+          ai_verdict: Json
+          claimed_score: string | null
+          created_at: string
+          exam: string | null
+          id: string
+          kind: Database["public"]["Enums"]["verification_kind"]
+          proof_path: string | null
+          reviewer_note: string | null
+          status: Database["public"]["Enums"]["verification_status"]
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_confidence?: number
+          ai_verdict?: Json
+          claimed_score?: string | null
+          created_at?: string
+          exam?: string | null
+          id?: string
+          kind: Database["public"]["Enums"]["verification_kind"]
+          proof_path?: string | null
+          reviewer_note?: string | null
+          status?: Database["public"]["Enums"]["verification_status"]
+          subject: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_confidence?: number
+          ai_verdict?: Json
+          claimed_score?: string | null
+          created_at?: string
+          exam?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["verification_kind"]
+          proof_path?: string | null
+          reviewer_note?: string | null
+          status?: Database["public"]["Enums"]["verification_status"]
+          subject?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1269,6 +1568,10 @@ export type Database = {
         Args: { _community_id: string; _user_id: string }
         Returns: boolean
       }
+      is_course_host: {
+        Args: { _course_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_session_participant: {
         Args: { _session_id: string; _user_id: string }
         Returns: boolean
@@ -1277,18 +1580,28 @@ export type Database = {
         Args: { _session_id: string; _user_id: string }
         Returns: boolean
       }
+      is_verified_for: {
+        Args: { _subject: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "tutor" | "learner"
+      attendance_status: "present" | "absent" | "excused" | "pending"
       category_kind: "academic" | "hobby" | "community"
       channel_kind: "text" | "voice" | "resources"
       community_role: "owner" | "mod" | "member"
+      course_status: "draft" | "open" | "running" | "ended" | "cancelled"
+      enrollment_status: "active" | "completed" | "withdrawn" | "removed"
+      learn_track: "peer" | "training" | "workshop" | "kids"
       participant_role: "tutor" | "student"
       report_status: "open" | "reviewing" | "resolved" | "dismissed"
       session_format: "one_on_one" | "group"
       session_kind: "free" | "paid"
       session_status: "scheduled" | "live" | "ended" | "cancelled"
       user_role: "learner" | "tutor"
+      verification_kind: "exam_score" | "credential" | "peer_no_score"
+      verification_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1417,15 +1730,21 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "tutor", "learner"],
+      attendance_status: ["present", "absent", "excused", "pending"],
       category_kind: ["academic", "hobby", "community"],
       channel_kind: ["text", "voice", "resources"],
       community_role: ["owner", "mod", "member"],
+      course_status: ["draft", "open", "running", "ended", "cancelled"],
+      enrollment_status: ["active", "completed", "withdrawn", "removed"],
+      learn_track: ["peer", "training", "workshop", "kids"],
       participant_role: ["tutor", "student"],
       report_status: ["open", "reviewing", "resolved", "dismissed"],
       session_format: ["one_on_one", "group"],
       session_kind: ["free", "paid"],
       session_status: ["scheduled", "live", "ended", "cancelled"],
       user_role: ["learner", "tutor"],
+      verification_kind: ["exam_score", "credential", "peer_no_score"],
+      verification_status: ["pending", "approved", "rejected"],
     },
   },
 } as const

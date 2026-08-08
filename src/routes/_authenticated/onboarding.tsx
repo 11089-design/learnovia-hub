@@ -143,7 +143,7 @@ export function OnboardingPage() {
               <p className="mt-1 text-sm text-muted-foreground">You can switch anytime — most people do both.</p>
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 <RolePick selected={role === "learner"} onClick={() => setRole("learner")} icon={<GraduationCap />} title="I want to learn" desc="Find peers to learn from in classes, hobbies & homework." />
-                <RolePick selected={role === "tutor"} onClick={() => setRole("tutor")} icon={<Users />} title="I want to teach" desc="Share what you know. Build trust. Earn from paid sessions." />
+                <RolePick selected={role === "tutor"} onClick={() => setRole("tutor")} icon={<Users />} title="I want to teach" desc="Share what you know. Build trust. Everything is free." />
               </div>
             </div>
           )}
@@ -224,7 +224,7 @@ export function OnboardingPage() {
                     <div>
                       <Label htmlFor="consent" className="cursor-pointer">I have parent/guardian consent</Label>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        Under 18 tutors need parent/guardian consent to earn from paid sessions. You can still teach free sessions either way.
+                        Under 18? A parent/guardian should know you’re teaching on Learnova. All sessions are free — no payments, ever.
                       </p>
                     </div>
                   </div>

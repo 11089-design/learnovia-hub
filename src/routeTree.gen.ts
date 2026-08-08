@@ -9,12 +9,16 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WorkshopsRouteImport } from './routes/workshops'
+import { Route as TrainingRouteImport } from './routes/training'
 import { Route as SafetyRouteImport } from './routes/safety'
+import { Route as KidsRouteImport } from './routes/kids'
 import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as CommunitiesRouteImport } from './routes/communities'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedVerifyRouteImport } from './routes/_authenticated/verify'
 import { Route as AuthenticatedStudyPlanRouteImport } from './routes/_authenticated/study-plan'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedLeaderboardRouteImport } from './routes/_authenticated/leaderboard'
@@ -25,14 +29,31 @@ import { Route as AuthenticatedUsersUserIdRouteImport } from './routes/_authenti
 import { Route as AuthenticatedSessionsNewRouteImport } from './routes/_authenticated/sessions/new'
 import { Route as AuthenticatedSessionsSessionIdRouteImport } from './routes/_authenticated/sessions/$sessionId'
 import { Route as AuthenticatedMessagesThreadIdRouteImport } from './routes/_authenticated/messages/$threadId'
+import { Route as AuthenticatedCoursesNewRouteImport } from './routes/_authenticated/courses/new'
+import { Route as AuthenticatedCoursesSlugRouteImport } from './routes/_authenticated/courses/$slug'
 import { Route as AuthenticatedCommunitiesNewRouteImport } from './routes/_authenticated/communities/new'
 import { Route as AuthenticatedCommunitiesSlugRouteImport } from './routes/_authenticated/communities/$slug'
 import { Route as AuthenticatedSessionsSessionIdRoomRouteImport } from './routes/_authenticated/sessions/$sessionId.room'
 import { Route as AuthenticatedSessionsSessionIdEditRouteImport } from './routes/_authenticated/sessions/$sessionId.edit'
 
+const WorkshopsRoute = WorkshopsRouteImport.update({
+  id: '/workshops',
+  path: '/workshops',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TrainingRoute = TrainingRouteImport.update({
+  id: '/training',
+  path: '/training',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SafetyRoute = SafetyRouteImport.update({
   id: '/safety',
   path: '/safety',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KidsRoute = KidsRouteImport.update({
+  id: '/kids',
+  path: '/kids',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ExploreRoute = ExploreRouteImport.update({
@@ -58,6 +79,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedVerifyRoute = AuthenticatedVerifyRouteImport.update({
+  id: '/verify',
+  path: '/verify',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedStudyPlanRoute = AuthenticatedStudyPlanRouteImport.update({
   id: '/study-plan',
@@ -115,6 +141,17 @@ const AuthenticatedMessagesThreadIdRoute =
     path: '/messages/$threadId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCoursesNewRoute = AuthenticatedCoursesNewRouteImport.update({
+  id: '/courses/new',
+  path: '/courses/new',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCoursesSlugRoute =
+  AuthenticatedCoursesSlugRouteImport.update({
+    id: '/courses/$slug',
+    path: '/courses/$slug',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCommunitiesNewRoute =
   AuthenticatedCommunitiesNewRouteImport.update({
     id: '/communities/new',
@@ -145,14 +182,20 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/communities': typeof CommunitiesRoute
   '/explore': typeof ExploreRoute
+  '/kids': typeof KidsRoute
   '/safety': typeof SafetyRoute
+  '/training': typeof TrainingRoute
+  '/workshops': typeof WorkshopsRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/study-plan': typeof AuthenticatedStudyPlanRoute
+  '/verify': typeof AuthenticatedVerifyRoute
   '/communities/$slug': typeof AuthenticatedCommunitiesSlugRoute
   '/communities/new': typeof AuthenticatedCommunitiesNewRoute
+  '/courses/$slug': typeof AuthenticatedCoursesSlugRoute
+  '/courses/new': typeof AuthenticatedCoursesNewRoute
   '/messages/$threadId': typeof AuthenticatedMessagesThreadIdRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRouteWithChildren
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
@@ -166,14 +209,20 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/communities': typeof CommunitiesRoute
   '/explore': typeof ExploreRoute
+  '/kids': typeof KidsRoute
   '/safety': typeof SafetyRoute
+  '/training': typeof TrainingRoute
+  '/workshops': typeof WorkshopsRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/study-plan': typeof AuthenticatedStudyPlanRoute
+  '/verify': typeof AuthenticatedVerifyRoute
   '/communities/$slug': typeof AuthenticatedCommunitiesSlugRoute
   '/communities/new': typeof AuthenticatedCommunitiesNewRoute
+  '/courses/$slug': typeof AuthenticatedCoursesSlugRoute
+  '/courses/new': typeof AuthenticatedCoursesNewRoute
   '/messages/$threadId': typeof AuthenticatedMessagesThreadIdRoute
   '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRouteWithChildren
   '/sessions/new': typeof AuthenticatedSessionsNewRoute
@@ -189,14 +238,20 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/communities': typeof CommunitiesRoute
   '/explore': typeof ExploreRoute
+  '/kids': typeof KidsRoute
   '/safety': typeof SafetyRoute
+  '/training': typeof TrainingRoute
+  '/workshops': typeof WorkshopsRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/study-plan': typeof AuthenticatedStudyPlanRoute
+  '/_authenticated/verify': typeof AuthenticatedVerifyRoute
   '/_authenticated/communities/$slug': typeof AuthenticatedCommunitiesSlugRoute
   '/_authenticated/communities/new': typeof AuthenticatedCommunitiesNewRoute
+  '/_authenticated/courses/$slug': typeof AuthenticatedCoursesSlugRoute
+  '/_authenticated/courses/new': typeof AuthenticatedCoursesNewRoute
   '/_authenticated/messages/$threadId': typeof AuthenticatedMessagesThreadIdRoute
   '/_authenticated/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRouteWithChildren
   '/_authenticated/sessions/new': typeof AuthenticatedSessionsNewRoute
@@ -212,14 +267,20 @@ export interface FileRouteTypes {
     | '/auth'
     | '/communities'
     | '/explore'
+    | '/kids'
     | '/safety'
+    | '/training'
+    | '/workshops'
     | '/admin'
     | '/dashboard'
     | '/leaderboard'
     | '/onboarding'
     | '/study-plan'
+    | '/verify'
     | '/communities/$slug'
     | '/communities/new'
+    | '/courses/$slug'
+    | '/courses/new'
     | '/messages/$threadId'
     | '/sessions/$sessionId'
     | '/sessions/new'
@@ -233,14 +294,20 @@ export interface FileRouteTypes {
     | '/auth'
     | '/communities'
     | '/explore'
+    | '/kids'
     | '/safety'
+    | '/training'
+    | '/workshops'
     | '/admin'
     | '/dashboard'
     | '/leaderboard'
     | '/onboarding'
     | '/study-plan'
+    | '/verify'
     | '/communities/$slug'
     | '/communities/new'
+    | '/courses/$slug'
+    | '/courses/new'
     | '/messages/$threadId'
     | '/sessions/$sessionId'
     | '/sessions/new'
@@ -255,14 +322,20 @@ export interface FileRouteTypes {
     | '/auth'
     | '/communities'
     | '/explore'
+    | '/kids'
     | '/safety'
+    | '/training'
+    | '/workshops'
     | '/_authenticated/admin'
     | '/_authenticated/dashboard'
     | '/_authenticated/leaderboard'
     | '/_authenticated/onboarding'
     | '/_authenticated/study-plan'
+    | '/_authenticated/verify'
     | '/_authenticated/communities/$slug'
     | '/_authenticated/communities/new'
+    | '/_authenticated/courses/$slug'
+    | '/_authenticated/courses/new'
     | '/_authenticated/messages/$threadId'
     | '/_authenticated/sessions/$sessionId'
     | '/_authenticated/sessions/new'
@@ -278,16 +351,40 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   CommunitiesRoute: typeof CommunitiesRoute
   ExploreRoute: typeof ExploreRoute
+  KidsRoute: typeof KidsRoute
   SafetyRoute: typeof SafetyRoute
+  TrainingRoute: typeof TrainingRoute
+  WorkshopsRoute: typeof WorkshopsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/workshops': {
+      id: '/workshops'
+      path: '/workshops'
+      fullPath: '/workshops'
+      preLoaderRoute: typeof WorkshopsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/training': {
+      id: '/training'
+      path: '/training'
+      fullPath: '/training'
+      preLoaderRoute: typeof TrainingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/safety': {
       id: '/safety'
       path: '/safety'
       fullPath: '/safety'
       preLoaderRoute: typeof SafetyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/kids': {
+      id: '/kids'
+      path: '/kids'
+      fullPath: '/kids'
+      preLoaderRoute: typeof KidsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/explore': {
@@ -324,6 +421,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/verify': {
+      id: '/_authenticated/verify'
+      path: '/verify'
+      fullPath: '/verify'
+      preLoaderRoute: typeof AuthenticatedVerifyRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/study-plan': {
       id: '/_authenticated/study-plan'
@@ -395,6 +499,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMessagesThreadIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/courses/new': {
+      id: '/_authenticated/courses/new'
+      path: '/courses/new'
+      fullPath: '/courses/new'
+      preLoaderRoute: typeof AuthenticatedCoursesNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/courses/$slug': {
+      id: '/_authenticated/courses/$slug'
+      path: '/courses/$slug'
+      fullPath: '/courses/$slug'
+      preLoaderRoute: typeof AuthenticatedCoursesSlugRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/communities/new': {
       id: '/_authenticated/communities/new'
       path: '/communities/new'
@@ -450,8 +568,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLeaderboardRoute: typeof AuthenticatedLeaderboardRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedStudyPlanRoute: typeof AuthenticatedStudyPlanRoute
+  AuthenticatedVerifyRoute: typeof AuthenticatedVerifyRoute
   AuthenticatedCommunitiesSlugRoute: typeof AuthenticatedCommunitiesSlugRoute
   AuthenticatedCommunitiesNewRoute: typeof AuthenticatedCommunitiesNewRoute
+  AuthenticatedCoursesSlugRoute: typeof AuthenticatedCoursesSlugRoute
+  AuthenticatedCoursesNewRoute: typeof AuthenticatedCoursesNewRoute
   AuthenticatedMessagesThreadIdRoute: typeof AuthenticatedMessagesThreadIdRoute
   AuthenticatedSessionsSessionIdRoute: typeof AuthenticatedSessionsSessionIdRouteWithChildren
   AuthenticatedSessionsNewRoute: typeof AuthenticatedSessionsNewRoute
@@ -465,8 +586,11 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLeaderboardRoute: AuthenticatedLeaderboardRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedStudyPlanRoute: AuthenticatedStudyPlanRoute,
+  AuthenticatedVerifyRoute: AuthenticatedVerifyRoute,
   AuthenticatedCommunitiesSlugRoute: AuthenticatedCommunitiesSlugRoute,
   AuthenticatedCommunitiesNewRoute: AuthenticatedCommunitiesNewRoute,
+  AuthenticatedCoursesSlugRoute: AuthenticatedCoursesSlugRoute,
+  AuthenticatedCoursesNewRoute: AuthenticatedCoursesNewRoute,
   AuthenticatedMessagesThreadIdRoute: AuthenticatedMessagesThreadIdRoute,
   AuthenticatedSessionsSessionIdRoute:
     AuthenticatedSessionsSessionIdRouteWithChildren,
@@ -484,7 +608,10 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   CommunitiesRoute: CommunitiesRoute,
   ExploreRoute: ExploreRoute,
+  KidsRoute: KidsRoute,
   SafetyRoute: SafetyRoute,
+  TrainingRoute: TrainingRoute,
+  WorkshopsRoute: WorkshopsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
