@@ -81,7 +81,7 @@ function StudyPlanPage() {
         .limit(1)
         .maybeSingle();
       if (data) {
-        setPlan(data.plan as unknown as Plan);
+        setPlan(normalize(data.plan));
         setCreatedAt(data.created_at);
       }
     })();
@@ -115,6 +115,24 @@ function StudyPlanPage() {
     setTopicInput("");
   };
 
+  /** Older saved plans can be missing arrays — normalise so rendering never throws. */
+  const normalize = (raw: unknown): Plan => {
+    const p = (raw ?? {}) as Partial<Plan> & Record<string, unknown>;
+    return {
+      ...(p as Plan),
+      title: (p.title as string) ?? "Your study plan",
+      overview: (p.overview as string) ?? "",
+      days: Array.isArray(p.days)
+        ? p.days.map((d) => ({ ...d, blocks: Array.isArray(d?.blocks) ? d.blocks : [] }))
+        : [],
+      milestones: Array.isArray(p.milestones) ? p.milestones : [],
+      study_techniques: Array.isArray(p.study_techniques) ? p.study_techniques : [],
+      resources: Array.isArray(p.resources) ? p.resources : [],
+      tutor_topics: Array.isArray(p.tutor_topics) ? p.tutor_topics : [],
+      tips: Array.isArray(p.tips) ? p.tips : [],
+    } as Plan;
+  };
+
   const build = async () => {
     setLoading(true);
     try {
@@ -131,7 +149,7 @@ function StudyPlanPage() {
           daysAvailable: days,
         },
       });
-      setPlan(out as unknown as Plan);
+      setPlan(normalize(out));
       setCreatedAt(new Date().toISOString());
       setProgress({});
       toast.success("Your plan is ready");
@@ -142,7 +160,7 @@ function StudyPlanPage() {
     }
   };
 
-  const totalTasks = useMemo(() => plan?.days.reduce((s, d) => s + d.blocks.length, 0) ?? 0, [plan]);
+  const totalTasks = useMemo(() => (plan?.days ?? []).reduce((s, d) => s + (d.blocks?.length ?? 0), 0) ?? 0, [plan]);
   const doneTasks = useMemo(() => Object.values(progress).filter(Boolean).length, [progress]);
   const pct = totalTasks ? Math.round((doneTasks / totalTasks) * 100) : 0;
 
@@ -323,7 +341,7 @@ function StudyPlanPage() {
                   <h2 className="mt-0.5 text-2xl font-bold tracking-tight">{plan.title}</h2>
                   <p className="mt-1 text-sm text-muted-foreground">{plan.overview}</p>
                   {plan.weekly_theme && (
-                    <p className="mt-2 text-sm font-medium text-primary">🎯 {plan.weekly_theme}</p>
+                    <p className="mt-2 text-sm font-medium text-primary">{plan.weekly_theme}</p>
                   )}
                 </div>
                 {createdAt && (
@@ -349,7 +367,7 @@ function StudyPlanPage() {
             </div>
 
             {/* Milestones */}
-            {plan.milestones?.length > 0 && (
+            {(plan.milestones?.length ?? 0) > 0 && (
               <div className="glass mb-4 rounded-2xl p-4 shadow-soft">
                 <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold">
                   <Target className="h-3.5 w-3.5 text-primary" /> Milestones
@@ -367,7 +385,7 @@ function StudyPlanPage() {
 
             {/* Days */}
             <div className="grid gap-3 md:grid-cols-2">
-              {plan.days.map((d, i) => (
+              {(plan.days ?? []).map((d, i) => (
                 <div key={i} className="glass rounded-2xl p-4 shadow-soft">
                   <div className="mb-2 flex items-center justify-between">
                     <p className="flex items-center gap-1.5 text-sm font-semibold">
@@ -434,7 +452,7 @@ function StudyPlanPage() {
 
             {/* Techniques + Resources + Tutor topics */}
             <div className="mt-4 grid gap-3 md:grid-cols-2">
-              {plan.study_techniques?.length > 0 && (
+              {(plan.study_techniques?.length ?? 0) > 0 && (
                 <div className="glass rounded-2xl p-4 shadow-soft">
                   <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold">
                     <Brain className="h-3.5 w-3.5 text-primary" /> Techniques for you
@@ -450,7 +468,7 @@ function StudyPlanPage() {
                 </div>
               )}
 
-              {plan.resources?.length > 0 && (
+              {(plan.resources?.length ?? 0) > 0 && (
                 <div className="glass rounded-2xl p-4 shadow-soft">
                   <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold">
                     <BookOpen className="h-3.5 w-3.5 text-primary" /> Resources
@@ -476,7 +494,7 @@ function StudyPlanPage() {
               )}
             </div>
 
-            {plan.tutor_topics?.length > 0 && (
+            {(plan.tutor_topics?.length ?? 0) > 0 && (
               <div className="glass mt-4 rounded-2xl p-4 shadow-soft">
                 <div className="mb-2 flex items-center justify-between">
                   <p className="flex items-center gap-1.5 text-sm font-semibold">
@@ -498,7 +516,7 @@ function StudyPlanPage() {
               </div>
             )}
 
-            {plan.tips?.length > 0 && (
+            {(plan.tips?.length ?? 0) > 0 && (
               <div className="glass mt-4 rounded-2xl p-4 shadow-soft">
                 <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold">
                   <Lightbulb className="h-3.5 w-3.5 text-primary" /> Tips
