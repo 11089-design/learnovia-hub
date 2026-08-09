@@ -5,18 +5,23 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 
 export const THEMES = [
   { id: "lavender", label: "Lavender", swatch: "linear-gradient(135deg,#6C63FF,#A78BFA)" },
-  { id: "neon", label: "Neon", swatch: "linear-gradient(135deg,#00E58A,#22D3EE)" },
-  { id: "sunset", label: "Sunset", swatch: "linear-gradient(135deg,#F0553C,#F5A524)" },
+  { id: "neon", label: "Neon (dark)", swatch: "linear-gradient(135deg,#F5F32B,#1b1c2e)" },
+  { id: "sunset", label: "Sunset", swatch: "linear-gradient(135deg,#C86A4A,#E7B77C)" },
 ] as const;
 
 export type ThemeId = (typeof THEMES)[number]["id"];
 const STORAGE_KEY = "learnova-theme";
 
+/** Neon is a dark cyberpunk theme, so it also toggles the dark class. */
 export function applyTheme(id: string) {
   if (typeof document === "undefined") return;
-  if (id === "lavender") document.documentElement.removeAttribute("data-theme");
-  else document.documentElement.setAttribute("data-theme", id);
+  const root = document.documentElement;
+  if (id === "lavender") root.removeAttribute("data-theme");
+  else root.setAttribute("data-theme", id);
+  root.classList.toggle("dark", id === "neon");
+  root.style.colorScheme = id === "neon" ? "dark" : "light";
 }
+
 
 /** Restores the saved theme on mount. Kids routes override with their own theme. */
 export function useThemeRestore() {
