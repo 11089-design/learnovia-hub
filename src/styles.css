@@ -356,8 +356,16 @@
 
   h1, h2, h3, h4 {
     font-family: var(--font-display);
-    letter-spacing: -0.02em;
+    font-weight: var(--app-display-weight, 700);
+    letter-spacing: var(--app-display-tracking, -0.02em);
   }
+
+  /* Cyberpunk glow for the neon theme headings */
+  [data-theme="neon"] h1,
+  [data-theme="neon"] h2 {
+    text-shadow: 0 0 24px color-mix(in oklab, var(--brand) 35%, transparent);
+  }
+
 }
 
 @keyframes wiggle {
