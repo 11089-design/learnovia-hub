@@ -25,7 +25,7 @@ type Profile = {
   onboarded: boolean;
   interests: string[];
 };
-type UpcomingSession = { id: string; title: string; starts_at: string | null; tutor_id: string };
+type UpcomingSession = { id: string; title: string; starts_at: string | null; ends_at?: string | null; status?: string | null; tutor_id: string };
 type BadgeRow = { badge_id: string; awarded_at: string; badges: { key: string; name: string; description: string | null; icon: string | null } | null };
 type LeaderRow = { user_id: string; current_streak: number; profiles?: { display_name: string | null } | null };
 type FeaturedTutor = { id: string; display_name: string | null; avatar_url: string | null; headline: string | null; avg_rating: number; free_sessions_taught: number };
