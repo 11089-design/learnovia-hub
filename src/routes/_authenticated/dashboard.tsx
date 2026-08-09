@@ -76,8 +76,10 @@ function DashboardPage() {
         setProfile(p as Profile);
         if (!p.onboarded) navigate({ to: "/onboarding" });
       }
-      setUpcoming((ups ?? []).map((r) => r.session as UpcomingSession).filter(Boolean).slice(0, 5));
-      setHosting((host ?? []) as UpcomingSession[]);
+      setUpcoming(
+        (ups ?? []).map((r) => r.session as UpcomingSession).filter((x) => x && !isSessionOver(x)).slice(0, 5),
+      );
+      setHosting(((host ?? []) as UpcomingSession[]).filter((x) => !isSessionOver(x)));
       setBadges((bs ?? []) as unknown as BadgeRow[]);
       setStreak(st ?? null);
       setIsAdmin((roles ?? []).some((r) => r.role === "admin" || r.role === "moderator"));
