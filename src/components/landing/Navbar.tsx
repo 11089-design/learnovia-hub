@@ -20,28 +20,28 @@ export function Navbar() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50">
-      <div className="mx-auto mt-4 max-w-6xl px-4">
-        <div className="glass flex items-center justify-between rounded-2xl px-5 py-3">
-          <Link to="/" className="flex items-center gap-2">
+      <div className="mx-auto mt-4 max-w-7xl px-3 sm:px-4">
+        <div className="glass flex items-center gap-3 rounded-2xl px-4 py-2.5 sm:px-5">
+          <Link to="/" className="flex shrink-0 items-center gap-2">
             <div className="grid h-9 w-9 place-items-center rounded-xl bg-brand-gradient text-white shadow-soft">
               <Sparkles className="h-5 w-5" />
             </div>
-            <span className="text-lg font-bold tracking-tight">
+            <span className="text-base font-bold tracking-tight sm:text-lg">
               Learn<span className="gradient-text">ova</span>
             </span>
           </Link>
 
-          <nav className="hidden items-center gap-7 md:flex">
-            <Link to="/explore" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Explore</Link>
-            <Link to="/training" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Training</Link>
-            <Link to="/workshops" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Workshops</Link>
-            <Link to="/kids" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Kids</Link>
-            <Link to="/communities" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Communities</Link>
-            <Link to="/safety" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Safety</Link>
+          <nav className="hidden flex-1 items-center justify-center gap-1 lg:flex">
+            <Link to="/explore" className="rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground">Explore</Link>
+            <Link to="/training" className="rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground">Training</Link>
+            <Link to="/workshops" className="rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground">Workshops</Link>
+            <Link to="/kids" className="rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground">Kids</Link>
+            <Link to="/communities" className="rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground">Communities</Link>
+            <Link to="/safety" className="rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground">Safety</Link>
           </nav>
 
 
-          <div className="flex items-center gap-2">
+          <div className="ml-auto flex shrink-0 items-center gap-1.5">
             <ThemeSwitcher />
 
             {signedIn ? (
