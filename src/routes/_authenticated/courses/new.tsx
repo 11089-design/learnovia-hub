@@ -31,7 +31,7 @@ export const Route = createFileRoute("/_authenticated/courses/new")({
 });
 
 type Day = { title: string; blueprint: string };
-type Verification = { id: string; subject: string; kind: string; status: string };
+type Verification = { id: string; subject: string; kind: string; status: string; exam: string | null };
 
 function NewCoursePage() {
   const { track } = Route.useSearch() as { track: Track };
@@ -51,15 +51,21 @@ function NewCoursePage() {
   const [seats, setSeats] = useState("30");
   const [startsOn, setStartsOn] = useState("");
   const [outcomes, setOutcomes] = useState("");
-  const [days, setDays] = useState<Day[]>([
-    { title: "Day 1 — Basics & tools", blueprint: "" },
-    { title: "Day 2 — Core practice", blueprint: "" },
-    { title: "Day 3 — Mastery check", blueprint: "" },
-  ]);
+  // Workshops can be a single day; training and kids courses need a real roadmap.
+  const minDays = track === "workshop" ? 1 : 3;
+  const [days, setDays] = useState<Day[]>(
+    track === "workshop"
+      ? [{ title: "Session plan", blueprint: "" }]
+      : [
+          { title: "Day 1 — Basics & tools", blueprint: "" },
+          { title: "Day 2 — Core practice", blueprint: "" },
+          { title: "Day 3 — Mastery check", blueprint: "" },
+        ],
+  );
 
   useEffect(() => {
     supabase.from("categories").select("id, name").order("name").then(({ data }) => setCategories(data ?? []));
-    supabase.from("tutor_verifications").select("id, subject, kind, status").eq("status", "approved")
+    supabase.from("tutor_verifications").select("id, subject, kind, status, exam").eq("status", "approved")
       .then(({ data }) => setVerifs((data ?? []) as Verification[]));
   }, []);
 
@@ -68,7 +74,7 @@ function NewCoursePage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (days.length < 3) { toast.error("A course needs at least 3 days"); return; }
+    if (days.length < minDays) { toast.error(`This needs at least ${minDays} day${minDays === 1 ? "" : "s"}`); return; }
     if (days.some((d) => !d.title.trim())) { toast.error("Every day needs a title"); return; }
     setSaving(true);
     try {
@@ -145,7 +151,9 @@ function NewCoursePage() {
         </Button>
         <h1 className="text-2xl font-bold tracking-tight">New {labels[track]}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Minimum 3 days, each with its own blueprint. Attendance is mandatory — learners must notify you at least an hour before to be excused.
+          {track === "workshop"
+            ? "One day is fine — add more only if your workshop runs as a series."
+            : "Minimum 3 days, each with its own blueprint. Learners must notify you at least an hour before to be excused."}
         </p>
 
         <form onSubmit={submit} className="glass mt-6 space-y-4 rounded-3xl p-6 shadow-soft">
@@ -170,7 +178,7 @@ function NewCoursePage() {
                 <SelectContent>
                   <SelectItem value="none">No category</SelectItem>
                   {categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                  <SelectItem value="other">Other — name your own ✨</SelectItem>
+                  <SelectItem value="other">Other — name your own</SelectItem>
                 </SelectContent>
               </Select>
               {categoryId === "other" && (
@@ -179,17 +187,32 @@ function NewCoursePage() {
             </div>
             <div className="space-y-1.5">
               <Label>Teaching basis</Label>
-              <Select value={verifId} onValueChange={setVerifId}>
+              <Select
+                value={verifId}
+                onValueChange={(v) => {
+                  // "get-verified" isn't a real basis — it sends the host to the AI score check.
+                  if (v === "get-verified") { navigate({ to: "/verify" }); return; }
+                  setVerifId(v);
+                }}
+              >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="peer">Peer-to-peer (no score — I'm preparing too)</SelectItem>
                   {verifs.map((v) => (
-                    <SelectItem key={v.id} value={v.id}>Verified · {v.subject}</SelectItem>
+                    <SelectItem key={v.id} value={v.id}>Verified · {v.subject} {v.exam ? `(${v.exam})` : ""}</SelectItem>
                   ))}
+                  <SelectItem value="get-verified">Verified — upload my score / credential</SelectItem>
                 </SelectContent>
               </Select>
               {verifId === "peer" ? (
-                <Badge variant="outline" className="mt-1 rounded-full border-primary/40 text-primary">Shown as peer-to-peer</Badge>
+                <>
+                  <Badge variant="outline" className="mt-1 rounded-full border-primary/40 text-primary">Shown as peer-to-peer</Badge>
+                  {verifs.length === 0 && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Already sat the exam? <button type="button" onClick={() => navigate({ to: "/verify" })} className="text-primary underline">Upload your score</button> — AI checks it and you can teach as verified.
+                    </p>
+                  )}
+                </>
               ) : (
                 <Badge variant="secondary" className="mt-1 rounded-full"><ShieldCheck className="mr-1 h-3 w-3" /> Verified badge</Badge>
               )}
@@ -228,7 +251,7 @@ function NewCoursePage() {
 
           <div className="space-y-3 rounded-2xl border border-border/60 p-4">
             <div className="flex items-center justify-between">
-              <Label>Day-by-day blueprint (min 3)</Label>
+              <Label>Day-by-day blueprint {minDays > 1 ? `(min ${minDays})` : ""}</Label>
               <Button type="button" variant="outline" size="sm" className="rounded-full"
                 onClick={() => setDays((d) => [...d, { title: `Day ${d.length + 1} — `, blueprint: "" }])}>
                 <Plus className="mr-1 h-3 w-3" /> Add day
@@ -239,7 +262,7 @@ function NewCoursePage() {
                 <div className="flex items-center gap-2">
                   <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-brand-gradient text-xs font-bold text-white">{i + 1}</span>
                   <Input value={d.title} onChange={(e) => setDay(i, { title: e.target.value })} placeholder={`Day ${i + 1} — topic`} />
-                  {days.length > 3 && (
+                  {days.length > minDays && (
                     <Button type="button" variant="ghost" size="icon" onClick={() => setDays((x) => x.filter((_, idx) => idx !== i))}>
                       <Trash2 className="h-4 w-4 text-muted-foreground" />
                     </Button>

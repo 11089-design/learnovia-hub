@@ -136,7 +136,7 @@ function NewSessionPage() {
                 <SelectContent>
                   <SelectItem value="none">No category</SelectItem>
                   {categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                  <SelectItem value="other">Other — teach anything ✨</SelectItem>
+                  <SelectItem value="other">Other — teach anything</SelectItem>
                 </SelectContent>
               </Select>
               {categoryId === "other" && (
