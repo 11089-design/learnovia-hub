@@ -4,6 +4,8 @@ import {
   Sparkles, LogOut, Calendar, MessageSquare, Users, Award, Flame, Plus, BookOpen, Shield, Compass,
   Trophy, Wand2, Star, TrendingUp, GraduationCap, ArrowRight,
 } from "lucide-react";
+import { TrophyMascot } from "@/components/LearnovaMascots";
+import { isSessionOver } from "@/lib/session-time";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -58,8 +60,8 @@ function DashboardPage() {
 
       const [{ data: p }, { data: ups }, { data: host }, { data: bs }, { data: st }, { data: roles }, { data: lb }, { data: tt }, { data: com }, { data: parts }, { data: plan }] = await Promise.all([
         supabase.from("profiles").select("id, display_name, avatar_url, role, avg_rating, free_sessions_taught, can_charge, onboarded, interests").eq("id", uid).maybeSingle(),
-        supabase.from("session_participants").select("session:sessions(id, title, starts_at, tutor_id)").eq("user_id", uid).limit(20),
-        supabase.from("sessions").select("id, title, starts_at, tutor_id").eq("tutor_id", uid).neq("status", "ended").order("starts_at", { ascending: true, nullsFirst: false }).limit(10),
+        supabase.from("session_participants").select("session:sessions(id, title, starts_at, ends_at, status, tutor_id)").eq("user_id", uid).limit(20),
+        supabase.from("sessions").select("id, title, starts_at, ends_at, status, tutor_id").eq("tutor_id", uid).neq("status", "ended").neq("status", "cancelled").order("starts_at", { ascending: true, nullsFirst: false }).limit(10),
         supabase.from("user_badges").select("badge_id, awarded_at, badges(key, name, description, icon)").eq("user_id", uid).order("awarded_at", { ascending: false }).limit(8),
         supabase.from("streaks").select("current_streak").eq("user_id", uid).maybeSingle(),
         supabase.from("user_roles").select("role").eq("user_id", uid),

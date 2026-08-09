@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { SessionCard, type SessionListItem } from "@/components/SessionCard";
+import { isSessionOver } from "@/lib/session-time";
 
 export const Route = createFileRoute("/explore")({
   head: () => ({
@@ -38,14 +39,15 @@ function ExplorePage() {
     (async () => {
       let q = supabase
         .from("sessions")
-        .select("id, tutor_id, title, description, format, kind, price_cents, language, max_participants, starts_at, is_homework_help, status, category:categories(name, slug)")
+        .select("id, tutor_id, title, description, format, kind, price_cents, language, max_participants, starts_at, ends_at, is_homework_help, status, category:categories(name, slug)")
         .neq("status", "ended")
         .neq("status", "cancelled")
         .order("starts_at", { ascending: true, nullsFirst: false })
         .limit(60);
       if (hwOnly) q = q.eq("is_homework_help", true);
       const { data } = await q;
-      let rows = (data ?? []) as Array<SessionListItem & { tutor_id: string }>;
+      // Drop sessions whose time has already passed, even if the status was never flipped.
+      let rows = ((data ?? []) as Array<SessionListItem & { tutor_id: string }>).filter((s) => !isSessionOver(s));
       if (catSlug) rows = rows.filter((s) => s.category?.slug === catSlug);
       if (query.trim()) {
         const needle = query.toLowerCase();
