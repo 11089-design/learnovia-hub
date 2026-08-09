@@ -300,18 +300,19 @@
 }
 
 @utility glass {
-  background: color-mix(in oklab, white 70%, transparent);
+  background: var(--glass-bg, color-mix(in oklab, white 70%, transparent));
   backdrop-filter: blur(18px) saturate(140%);
-  border: 1px solid color-mix(in oklab, white 60%, transparent);
+  border: 1px solid var(--glass-border, color-mix(in oklab, white 60%, transparent));
   box-shadow: var(--shadow-card);
 }
 
 @utility glass-strong {
-  background: color-mix(in oklab, white 85%, transparent);
+  background: var(--glass-strong-bg, color-mix(in oklab, white 85%, transparent));
   backdrop-filter: blur(24px) saturate(160%);
-  border: 1px solid color-mix(in oklab, var(--brand) 14%, transparent);
+  border: 1px solid var(--glass-border, color-mix(in oklab, var(--brand) 14%, transparent));
   box-shadow: var(--shadow-glow);
 }
+
 
 @utility gradient-text {
   background: var(--gradient-brand);
