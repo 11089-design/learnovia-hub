@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { GraduationCap, ShieldCheck, CalendarCheck, Loader2, Plus, Sparkles } from "lucide-react";
+import {
+  CompassMascot, BoltMascot, BookMascot, SpeakMascot, PaletteMascot, StarMascot, LaptopMascot,
+} from "@/components/LearnovaMascots";
 import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/landing/Navbar";
 import { Footer } from "@/components/landing/Footer";
@@ -22,13 +25,13 @@ export const Route = createFileRoute("/training")({
 });
 
 const TRACK_CARDS = [
-  { slug: "sat-prep", name: "SAT Prep", emoji: "📐", blurb: "Sectional drills, timing strategy, full-length reviews." },
-  { slug: "ap-crash", name: "AP Crash Course", emoji: "⚡", blurb: "Units condensed, FRQ practice, past-paper timing." },
-  { slug: "college-essays", name: "College Essays", emoji: "✍️", blurb: "Brainstorm → draft → line edits, day by day." },
-  { slug: "language-crash", name: "Language Crash Course", emoji: "🗣️", blurb: "Core 500 words, speaking reps, listening drills." },
-  { slug: "art-studio", name: "Art Studio", emoji: "🎨", blurb: "Fundamentals, studies, a finished piece by day 5." },
-  { slug: "public-speaking", name: "Public Speaking", emoji: "🎤", blurb: "Structure, delivery, live feedback rounds." },
-  { slug: "coding-bootcamp", name: "Coding Bootcamp", emoji: "💻", blurb: "Build → break → ship a small project." },
+  { slug: "sat-prep", name: "SAT Prep", Icon: CompassMascot, blurb: "Sectional drills, timing strategy, full-length reviews." },
+  { slug: "ap-crash", name: "AP Crash Course", Icon: BoltMascot, blurb: "Units condensed, FRQ practice, past-paper timing." },
+  { slug: "college-essays", name: "College Essays", Icon: BookMascot, blurb: "Brainstorm to draft to line edits, day by day." },
+  { slug: "language-crash", name: "Language Crash Course", Icon: SpeakMascot, blurb: "Core 500 words, speaking reps, listening drills." },
+  { slug: "art-studio", name: "Art Studio", Icon: PaletteMascot, blurb: "Fundamentals, studies, a finished piece by day 5." },
+  { slug: "public-speaking", name: "Public Speaking", Icon: StarMascot, blurb: "Structure, delivery, live feedback rounds." },
+  { slug: "coding-bootcamp", name: "Coding Bootcamp", Icon: LaptopMascot, blurb: "Build, break and ship a small project." },
 ];
 
 function TrainingPage() {
@@ -76,8 +79,8 @@ function TrainingPage() {
             Structured crash courses. <span className="gradient-text">Still free.</span>
           </h1>
           <p className="mt-3 max-w-2xl text-muted-foreground">
-            Training courses run for a minimum of 3 days with a published day-by-day blueprint. Tutors either upload proof of their
-            score (checked by AI) or run it openly as a peer-to-peer study group — you always see which.
+            Training courses run for a minimum of 3 days with a published day-by-day blueprint, so you always know what each day covers
+            before you commit a seat.
           </p>
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
             <Feature icon={<ShieldCheck className="h-4 w-4" />} title="Score-verified or peer-led" body="Every course card says which — no guessing." />
@@ -104,7 +107,7 @@ function TrainingPage() {
                 cat === t.slug ? "ring-2 ring-primary" : ""
               }`}
             >
-              <div className="text-2xl">{t.emoji}</div>
+              <t.Icon className="h-9 w-9 text-primary" />
               <h3 className="mt-2 font-semibold">{t.name}</h3>
               <p className="mt-1 text-xs text-muted-foreground">{t.blurb}</p>
             </button>

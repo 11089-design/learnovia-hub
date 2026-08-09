@@ -57,8 +57,8 @@ function WorkshopsPage() {
             Ask the people who've <span className="gradient-text">actually done it.</span>
           </h1>
           <p className="mt-3 max-w-2xl text-muted-foreground">
-            Workshops are hosted by professors, admissions readers, researchers and working professionals — verified with a credential
-            before they can publish. Come for college admissions, essays, research, scholarships and careers.
+            Workshops are hosted by professors, admissions readers, researchers and working professionals. Come for college admissions,
+            essays, research, scholarships and careers. A workshop can be a single day — no minimum length.
           </p>
           <div className="mt-5 flex flex-wrap gap-2 text-xs">
             {["College admissions", "Scholarships & financial aid", "Research & labs", "Careers & internships", "Interview prep"].map((t) => (
