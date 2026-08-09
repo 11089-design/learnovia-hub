@@ -12,8 +12,9 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { isSessionOver } from "@/lib/session-time";
 
-export const Route = createFileRoute("/_authenticated/sessions/$sessionId")({
+export const Route = createFileRoute("/_authenticated/sessions/$sessionId/")({
   head: () => ({ meta: [{ title: "Session — Learnova" }] }),
   component: SessionDetailPage,
 });
@@ -89,6 +90,7 @@ function SessionDetailPage() {
   useEffect(() => { load(); }, [sessionId]);
 
   const isTutor = !!userId && !!session && session.tutor_id === userId;
+  const isOver = !!session && isSessionOver(session);
   const canChat = enrolled || isTutor;
 
   const enroll = async () => {
@@ -156,6 +158,7 @@ function SessionDetailPage() {
               <Badge variant="secondary" className="rounded-full">Always free</Badge>
               {session.level && <Badge variant="outline" className="rounded-full capitalize">{session.level}</Badge>}
               {session.locked && <Badge variant="destructive" className="rounded-full"><Lock className="mr-1 h-3 w-3" />Locked</Badge>}
+              {isOver && <Badge variant="outline" className="rounded-full border-muted-foreground/40 text-muted-foreground">Ended</Badge>}
             </div>
 
             <h1 className="text-3xl font-bold tracking-tight md:text-4xl">{session.title}</h1>
@@ -255,11 +258,17 @@ function SessionDetailPage() {
 
               {isTutor ? (
                 <div className="space-y-2">
-                  <Link to="/sessions/$sessionId/room" params={{ sessionId: session.id }}>
-                    <Button className="w-full rounded-full bg-brand-gradient text-white">
-                      <Video className="mr-1 h-4 w-4" /> Enter your room
-                    </Button>
-                  </Link>
+                  {isOver ? (
+                    <div className="rounded-2xl border border-border/60 bg-muted/40 p-3 text-center text-xs text-muted-foreground">
+                      This session has ended. Edit it to reschedule and reopen the room.
+                    </div>
+                  ) : (
+                    <Link to="/sessions/$sessionId/room" params={{ sessionId: session.id }}>
+                      <Button className="w-full rounded-full bg-brand-gradient text-white">
+                        <Video className="mr-1 h-4 w-4" /> Enter your room
+                      </Button>
+                    </Link>
+                  )}
                   <Link to="/sessions/$sessionId/edit" params={{ sessionId: session.id }}>
                     <Button variant="outline" className="w-full rounded-full">
                       <Pencil className="mr-1 h-4 w-4" /> Edit session
@@ -271,11 +280,17 @@ function SessionDetailPage() {
                 </div>
               ) : enrolled ? (
                 <div className="space-y-2">
-                  <Link to="/sessions/$sessionId/room" params={{ sessionId: session.id }}>
-                    <Button className="w-full rounded-full bg-brand-gradient text-white">
-                      <Video className="mr-1 h-4 w-4" /> Join live room
-                    </Button>
-                  </Link>
+                  {isOver ? (
+                    <div className="rounded-2xl border border-border/60 bg-muted/40 p-3 text-center text-xs text-muted-foreground">
+                      This session has ended.
+                    </div>
+                  ) : (
+                    <Link to="/sessions/$sessionId/room" params={{ sessionId: session.id }}>
+                      <Button className="w-full rounded-full bg-brand-gradient text-white">
+                        <Video className="mr-1 h-4 w-4" /> Join live room
+                      </Button>
+                    </Link>
+                  )}
                   <Button variant="outline" className="w-full rounded-full" onClick={() => setTab("chat")}>
                     <MessageSquare className="mr-1 h-4 w-4" /> Open group chat
                   </Button>
@@ -286,10 +301,11 @@ function SessionDetailPage() {
               ) : (
                 <Button
                   className="w-full rounded-full bg-brand-gradient text-white"
-                  disabled={enrolling || session.locked}
+                  disabled={enrolling || session.locked || isOver}
                   onClick={enroll}
                 >
                   {enrolling ? <Loader2 className="h-4 w-4 animate-spin" /> :
+                    isOver ? "Session ended" :
                     session.locked ? "Locked" :
                     "Enroll now"}
                 </Button>
