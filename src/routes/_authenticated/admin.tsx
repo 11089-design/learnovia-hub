@@ -124,7 +124,7 @@ function AdminPage() {
         </div>
 
         {visible.length === 0 ? (
-          <div className="glass rounded-2xl p-10 text-center text-sm text-muted-foreground">Nothing to review. ✨</div>
+          <div className="glass rounded-2xl p-10 text-center text-sm text-muted-foreground">Nothing to review right now.</div>
         ) : (
           <ul className="space-y-2">
             {visible.map((r) => {

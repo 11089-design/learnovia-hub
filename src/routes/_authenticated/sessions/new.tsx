@@ -164,11 +164,6 @@ function NewSessionPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-primary/25 bg-primary/5 px-4 py-3 text-sm">
-            <span className="font-semibold text-primary">100% free session.</span>{" "}
-            <span className="text-muted-foreground">Learnova has no payments — every session you host is free for learners.</span>
-          </div>
-
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-1.5">
               <Label htmlFor="lang">Language</Label>

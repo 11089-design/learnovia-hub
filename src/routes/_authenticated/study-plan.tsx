@@ -134,7 +134,7 @@ function StudyPlanPage() {
       setPlan(out as unknown as Plan);
       setCreatedAt(new Date().toISOString());
       setProgress({});
-      toast.success("Your plan is ready ✨");
+      toast.success("Your plan is ready");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to generate");
     } finally {

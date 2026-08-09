@@ -153,7 +153,7 @@ function DashboardPage() {
           <div className="relative flex flex-wrap items-end justify-between gap-4">
             <div className="min-w-0">
               <p className="text-sm text-muted-foreground">Welcome back,</p>
-              <h1 className="text-3xl font-bold tracking-tight md:text-4xl">{profile.display_name || "friend"} 👋</h1>
+              <h1 className="text-3xl font-bold tracking-tight md:text-4xl">{profile.display_name || "friend"}</h1>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <UIBadge variant="secondary" className="rounded-full capitalize">{profile.role}</UIBadge>
                 {profile.interests.slice(0, 4).map((t) => <UIBadge key={t} variant="outline" className="rounded-full">{t}</UIBadge>)}
@@ -259,7 +259,7 @@ function DashboardPage() {
                   <span className="font-semibold">{Number(profile.avg_rating).toFixed(2)} ★</span>
                 </div>
                 <p className="pt-2 text-xs text-muted-foreground">
-                  {profile.free_sessions_taught >= 5 ? "🎉 Trusted tutor — your profile now shows a verified trust badge." : "Teach 5 sessions and keep a 4★+ rating to earn your Trusted Tutor badge. Learnova is free for everyone, always."}
+                  {profile.free_sessions_taught >= 5 ? "Trusted tutor — your profile now shows a verified trust badge." : "Teach 5 sessions and keep a 4★+ rating to earn your Trusted Tutor badge. Learnova is free for everyone, always."}
                 </p>
               </div>
             </Card>
@@ -314,7 +314,7 @@ function DashboardPage() {
               <ul className="flex flex-wrap gap-2">
                 {badges.map((b) => (
                   <li key={b.badge_id} className="rounded-full bg-primary/10 px-3 py-1 text-xs text-primary" title={b.badges?.description ?? ""}>
-                    🏆 {b.badges?.name ?? "Badge"}
+                    <TrophyMascot className="mr-1 inline h-3.5 w-3.5" />{b.badges?.name ?? "Badge"}
                   </li>
                 ))}
               </ul>

@@ -401,7 +401,7 @@ function GroupChat({ sessionId, userId }: { sessionId: string; userId: string })
     <div className="glass flex h-[60vh] flex-col rounded-2xl">
       <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4">
         {messages.length === 0 && (
-          <p className="py-12 text-center text-xs text-muted-foreground">No messages yet — say hi 👋</p>
+          <p className="py-12 text-center text-xs text-muted-foreground">No messages yet — say hello.</p>
         )}
         {messages.map((m) => {
           const author = profiles[m.user_id];
