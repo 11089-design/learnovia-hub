@@ -169,7 +169,7 @@ function CoursePage() {
                 <p className="text-sm text-muted-foreground">You're hosting this course.</p>
               ) : enrolled ? (
                 <>
-                  <Button className="w-full rounded-full bg-brand-gradient text-white" disabled>You're enrolled ✓</Button>
+                  <Button className="w-full rounded-full bg-brand-gradient text-white" disabled>You're enrolled</Button>
                   <button onClick={withdraw} className="block w-full text-xs text-muted-foreground hover:text-destructive">Withdraw</button>
                 </>
               ) : (

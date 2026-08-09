@@ -4,6 +4,8 @@ import {
   Sparkles, LogOut, Calendar, MessageSquare, Users, Award, Flame, Plus, BookOpen, Shield, Compass,
   Trophy, Wand2, Star, TrendingUp, GraduationCap, ArrowRight,
 } from "lucide-react";
+import { TrophyMascot } from "@/components/LearnovaMascots";
+import { isSessionOver } from "@/lib/session-time";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -23,7 +25,7 @@ type Profile = {
   onboarded: boolean;
   interests: string[];
 };
-type UpcomingSession = { id: string; title: string; starts_at: string | null; tutor_id: string };
+type UpcomingSession = { id: string; title: string; starts_at: string | null; ends_at?: string | null; status?: string | null; tutor_id: string };
 type BadgeRow = { badge_id: string; awarded_at: string; badges: { key: string; name: string; description: string | null; icon: string | null } | null };
 type LeaderRow = { user_id: string; current_streak: number; profiles?: { display_name: string | null } | null };
 type FeaturedTutor = { id: string; display_name: string | null; avatar_url: string | null; headline: string | null; avg_rating: number; free_sessions_taught: number };
@@ -58,8 +60,8 @@ function DashboardPage() {
 
       const [{ data: p }, { data: ups }, { data: host }, { data: bs }, { data: st }, { data: roles }, { data: lb }, { data: tt }, { data: com }, { data: parts }, { data: plan }] = await Promise.all([
         supabase.from("profiles").select("id, display_name, avatar_url, role, avg_rating, free_sessions_taught, can_charge, onboarded, interests").eq("id", uid).maybeSingle(),
-        supabase.from("session_participants").select("session:sessions(id, title, starts_at, tutor_id)").eq("user_id", uid).limit(20),
-        supabase.from("sessions").select("id, title, starts_at, tutor_id").eq("tutor_id", uid).neq("status", "ended").order("starts_at", { ascending: true, nullsFirst: false }).limit(10),
+        supabase.from("session_participants").select("session:sessions(id, title, starts_at, ends_at, status, tutor_id)").eq("user_id", uid).limit(20),
+        supabase.from("sessions").select("id, title, starts_at, ends_at, status, tutor_id").eq("tutor_id", uid).neq("status", "ended").neq("status", "cancelled").order("starts_at", { ascending: true, nullsFirst: false }).limit(10),
         supabase.from("user_badges").select("badge_id, awarded_at, badges(key, name, description, icon)").eq("user_id", uid).order("awarded_at", { ascending: false }).limit(8),
         supabase.from("streaks").select("current_streak").eq("user_id", uid).maybeSingle(),
         supabase.from("user_roles").select("role").eq("user_id", uid),
@@ -74,8 +76,10 @@ function DashboardPage() {
         setProfile(p as Profile);
         if (!p.onboarded) navigate({ to: "/onboarding" });
       }
-      setUpcoming((ups ?? []).map((r) => r.session as UpcomingSession).filter(Boolean).slice(0, 5));
-      setHosting((host ?? []) as UpcomingSession[]);
+      setUpcoming(
+        (ups ?? []).map((r) => r.session as UpcomingSession).filter((x) => x && !isSessionOver(x)).slice(0, 5),
+      );
+      setHosting(((host ?? []) as UpcomingSession[]).filter((x) => !isSessionOver(x)));
       setBadges((bs ?? []) as unknown as BadgeRow[]);
       setStreak(st ?? null);
       setIsAdmin((roles ?? []).some((r) => r.role === "admin" || r.role === "moderator"));
@@ -153,7 +157,7 @@ function DashboardPage() {
           <div className="relative flex flex-wrap items-end justify-between gap-4">
             <div className="min-w-0">
               <p className="text-sm text-muted-foreground">Welcome back,</p>
-              <h1 className="text-3xl font-bold tracking-tight md:text-4xl">{profile.display_name || "friend"} 👋</h1>
+              <h1 className="text-3xl font-bold tracking-tight md:text-4xl">{profile.display_name || "friend"}</h1>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <UIBadge variant="secondary" className="rounded-full capitalize">{profile.role}</UIBadge>
                 {profile.interests.slice(0, 4).map((t) => <UIBadge key={t} variant="outline" className="rounded-full">{t}</UIBadge>)}
@@ -259,7 +263,7 @@ function DashboardPage() {
                   <span className="font-semibold">{Number(profile.avg_rating).toFixed(2)} ★</span>
                 </div>
                 <p className="pt-2 text-xs text-muted-foreground">
-                  {profile.free_sessions_taught >= 5 ? "🎉 Trusted tutor — your profile now shows a verified trust badge." : "Teach 5 sessions and keep a 4★+ rating to earn your Trusted Tutor badge. Learnova is free for everyone, always."}
+                  {profile.free_sessions_taught >= 5 ? "Trusted tutor — your profile now shows a verified trust badge." : "Teach 5 sessions and keep a 4★+ rating to earn your Trusted Tutor badge. Learnova is free for everyone, always."}
                 </p>
               </div>
             </Card>
@@ -314,7 +318,7 @@ function DashboardPage() {
               <ul className="flex flex-wrap gap-2">
                 {badges.map((b) => (
                   <li key={b.badge_id} className="rounded-full bg-primary/10 px-3 py-1 text-xs text-primary" title={b.badges?.description ?? ""}>
-                    🏆 {b.badges?.name ?? "Badge"}
+                    <TrophyMascot className="mr-1 inline h-3.5 w-3.5" />{b.badges?.name ?? "Badge"}
                   </li>
                 ))}
               </ul>

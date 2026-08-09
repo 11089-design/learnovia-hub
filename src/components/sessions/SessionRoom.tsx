@@ -494,7 +494,7 @@ function ChatPanel({ sessionId, userId, isTutor }: { sessionId: string; userId: 
           );
         })}
         {messages.length === 0 && (
-          <p className="py-10 text-center text-xs text-muted-foreground">No messages yet. Say hi 👋</p>
+          <p className="py-10 text-center text-xs text-muted-foreground">No messages yet — say hello.</p>
         )}
       </div>
 

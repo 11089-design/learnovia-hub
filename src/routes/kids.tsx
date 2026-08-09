@@ -4,6 +4,9 @@ import { Loader2, Plus, Star, Heart, Rocket, Sun } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { applyTheme } from "@/components/ThemeSwitcher";
+import {
+  KIDS_MASCOTS, OwlMascot, ChickMascot, NumbersMascot, BookMascot, ClayMascot, BeakerMascot,
+} from "@/components/LearnovaMascots";
 import { CourseCard, type CourseListItem } from "@/components/CourseCard";
 
 export const Route = createFileRoute("/kids")({
@@ -20,12 +23,12 @@ export const Route = createFileRoute("/kids")({
   component: KidsPage,
 });
 
-const MASCOTS = ["🦉", "🐣", "🐙", "🦄", "🐝", "🐳"];
+const MASCOTS = KIDS_MASCOTS;
 const ZONES = [
-  { slug: "kids-math", name: "Number Town", emoji: "🔢", blurb: "Counting, adding, times tables — with games." },
-  { slug: "kids-reading", name: "Story Woods", emoji: "📚", blurb: "Read-alouds, phonics and made-up stories." },
-  { slug: "kids-crafts", name: "Clay & Craft Cave", emoji: "🧶", blurb: "Clay animals, paper art, sticky fun." },
-  { slug: "kids-science", name: "Science Lab", emoji: "🔬", blurb: "Kitchen experiments and why-questions." },
+  { slug: "kids-math", name: "Number Town", Icon: NumbersMascot, blurb: "Counting, adding, times tables — with games." },
+  { slug: "kids-reading", name: "Story Woods", Icon: BookMascot, blurb: "Read-alouds, phonics and made-up stories." },
+  { slug: "kids-crafts", name: "Clay & Craft Cave", Icon: ClayMascot, blurb: "Clay animals, paper art, sticky fun." },
+  { slug: "kids-science", name: "Science Lab", Icon: BeakerMascot, blurb: "Kitchen experiments and why-questions." },
 ];
 
 function KidsPage() {
@@ -73,17 +76,19 @@ function KidsPage() {
 
       <header className="relative z-10 mx-auto flex max-w-6xl items-center justify-between px-4 py-6">
         <Link to="/" className="flex items-center gap-2">
-          <span className="grid h-11 w-11 place-items-center rounded-2xl bg-brand-gradient text-xl text-white shadow-soft animate-wiggle">🦉</span>
+          <span className="grid h-11 w-11 place-items-center rounded-2xl bg-brand-gradient text-white shadow-soft animate-wiggle"><OwlMascot className="h-7 w-7" /></span>
           <span className="text-xl font-bold">Learnova <span className="gradient-text">Kids</span></span>
         </Link>
-        <Link to="/dashboard"><Button variant="ghost" className="rounded-full">Grown-up mode</Button></Link>
+        <Link to="/"><Button variant="ghost" className="rounded-full">Grown-up mode</Button></Link>
       </header>
 
       <main className="relative z-10 mx-auto max-w-6xl px-4 pb-24">
         <section className="glass animate-pop-in rounded-[2.5rem] p-8 text-center shadow-soft">
-          <div className="flex justify-center gap-3 text-4xl">
-            {MASCOTS.map((m, i) => (
-              <span key={m} className="animate-bob" style={{ animationDelay: `${i * 0.25}s` }}>{m}</span>
+          <div className="flex justify-center gap-3 text-primary">
+            {MASCOTS.map((M, i) => (
+              <span key={i} className="animate-bob" style={{ animationDelay: `${i * 0.25}s` }}>
+                <M className="h-11 w-11" />
+              </span>
             ))}
           </div>
           <h1 className="mt-4 text-4xl font-bold leading-tight md:text-6xl">
@@ -118,7 +123,7 @@ function KidsPage() {
               }`}
               style={{ animationDelay: `${i * 0.08}s` }}
             >
-              <div className="text-4xl animate-bob" style={{ animationDelay: `${i * 0.3}s` }}>{z.emoji}</div>
+              <z.Icon className="h-11 w-11 animate-bob text-primary" style={{ animationDelay: `${i * 0.3}s` }} />
               <h3 className="mt-3 text-lg font-bold">{z.name}</h3>
               <p className="mt-1 text-xs text-muted-foreground">{z.blurb}</p>
             </button>
@@ -134,7 +139,7 @@ function KidsPage() {
           <div className="grid place-items-center py-16"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
         ) : courses.length === 0 ? (
           <div className="glass mt-4 rounded-[2rem] p-10 text-center">
-            <div className="text-4xl animate-wiggle">🐣</div>
+            <ChickMascot className="mx-auto h-12 w-12 animate-wiggle text-primary" />
             <p className="mt-3 text-sm text-muted-foreground">No classes hatched yet! Big buddies — teach the first one.</p>
             <Link to="/courses/new" search={{ track: "kids" }}>
               <Button className="mt-4 rounded-full bg-brand-gradient text-white"><Rocket className="mr-1 h-4 w-4" /> Start a class</Button>

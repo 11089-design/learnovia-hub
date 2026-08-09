@@ -13,6 +13,7 @@ export type SessionListItem = {
   language: string;
   max_participants: number;
   starts_at: string | null;
+  ends_at?: string | null;
   is_homework_help: boolean;
   status: string;
   category?: { name: string; slug: string } | null;

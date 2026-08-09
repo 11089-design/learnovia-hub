@@ -92,7 +92,7 @@ function ThreadPage() {
             </div>
           );
         })}
-        {messages.length === 0 && <p className="py-12 text-center text-xs text-muted-foreground">Say hi 👋</p>}
+        {messages.length === 0 && <p className="py-12 text-center text-xs text-muted-foreground">Say hello to start the conversation.</p>}
       </main>
       <form onSubmit={send} className="mx-auto flex w-full max-w-3xl gap-2 border-t border-border/50 p-3">
         <Input value={text} onChange={(e) => setText(e.target.value)} placeholder="Type a message…" />

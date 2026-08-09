@@ -24,7 +24,7 @@ export function ExitReflection({
     );
     setBusy(false);
     if (error) { toast.error(error.message); return; }
-    toast.success("Nice work — reflection saved ✨");
+    toast.success("Nice work — reflection saved");
     onDone();
   };
 

@@ -136,7 +136,7 @@ function NewSessionPage() {
                 <SelectContent>
                   <SelectItem value="none">No category</SelectItem>
                   {categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                  <SelectItem value="other">Other — teach anything ✨</SelectItem>
+                  <SelectItem value="other">Other — teach anything</SelectItem>
                 </SelectContent>
               </Select>
               {categoryId === "other" && (
@@ -162,11 +162,6 @@ function NewSessionPage() {
                 </SelectContent>
               </Select>
             </div>
-          </div>
-
-          <div className="rounded-2xl border border-primary/25 bg-primary/5 px-4 py-3 text-sm">
-            <span className="font-semibold text-primary">100% free session.</span>{" "}
-            <span className="text-muted-foreground">Learnova has no payments — every session you host is free for learners.</span>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-3">

@@ -239,7 +239,7 @@ function NewChannelButton({ communityId, nextPos }: { communityId: string; nextP
     const { error } = await supabase.from("community_channels").insert({ community_id: communityId, name: clean, kind, position: nextPos });
     setBusy(false);
     if (error) toast.error(error.message);
-    else { setName(""); setKind("text"); setOpen(false); toast.success(`${kind === "voice" ? "🔊" : "#"}${clean} created`); }
+    else { setName(""); setKind("text"); setOpen(false); toast.success(`${kind === "voice" ? "Voice room " : "#"}${clean} created`); }
   };
   return (
     <Dialog open={open} onOpenChange={setOpen}>

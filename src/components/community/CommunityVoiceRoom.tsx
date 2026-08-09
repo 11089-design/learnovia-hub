@@ -135,7 +135,7 @@ function VoiceRoomUI({ channelName, onLeave }: { channelName: string; onLeave: (
       <div className="flex-1 overflow-y-auto p-4">
         {participants.length === 0 ? (
           <p className="py-12 text-center text-xs text-muted-foreground">
-            You're the only one here. Invite a friend 👋
+            You're the only one here — invite a friend.
           </p>
         ) : (
           <ul className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
