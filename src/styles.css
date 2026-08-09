@@ -78,6 +78,14 @@
 :root {
   --radius: 1rem;
 
+  /* Typography — swaps with the theme */
+  --app-font-body: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --app-font-display: "Sora", "Plus Jakarta Sans", sans-serif;
+  --app-display-tracking: -0.025em;
+  --app-display-weight: 700;
+
+
+
   /* Brand */
   --brand: oklch(0.62 0.19 280);            /* #6C63FF soft indigo */
   --brand-foreground: oklch(0.99 0 0);
