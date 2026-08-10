@@ -38,6 +38,8 @@ export function Navbar() {
             <Link to="/kids" className="rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground">Kids</Link>
             <Link to="/communities" className="rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground">Communities</Link>
             <Link to="/safety" className="rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground">Safety</Link>
+            <Link to="/guide" className="rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground">Guide</Link>
+
           </nav>
 
 
