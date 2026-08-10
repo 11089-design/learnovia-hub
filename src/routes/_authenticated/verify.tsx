@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { ImageUploader } from "@/components/ImageUploader";
+import { ProofUploader, type ProofFile } from "@/components/ProofUploader";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/verify")({
@@ -44,7 +44,7 @@ function VerifyPage() {
   const [subject, setSubject] = useState("");
   const [exam, setExam] = useState("");
   const [score, setScore] = useState("");
-  const [proof, setProof] = useState<string | null>(null);
+  const [proof, setProof] = useState<ProofFile | null>(null);
   const [busy, setBusy] = useState(false);
   const [rows, setRows] = useState<Row[]>([]);
 
@@ -68,7 +68,8 @@ function VerifyPage() {
           subject: subject.trim(),
           exam: exam.trim() || undefined,
           claimedScore: score.trim() || undefined,
-          proofUrl: proof ?? undefined,
+          proofUrl: proof?.url ?? undefined,
+          proofMime: proof?.mime ?? undefined,
         },
       });
       if (res.status === "approved") toast.success("Verified! You can now host a training course.");
@@ -123,10 +124,10 @@ function VerifyPage() {
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label>Proof screenshot *</Label>
-                <ImageUploader value={proof} onChange={setProof} folder="verifications" shape="wide" />
+                <Label>Proof document *</Label>
+                <ProofUploader value={proof} onChange={setProof} folder="verifications" />
                 <p className="text-xs text-muted-foreground">
-                  Our AI reads the document and checks it against your claim. Cropped or edited images get sent to a human reviewer.
+                  Upload a screenshot or the original PDF. Our AI reads the issuer, score and scale, cross-checks it against your claim and looks for tampering. Anything unclear goes to a human reviewer.
                 </p>
               </div>
             </>
