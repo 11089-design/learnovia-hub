@@ -5,7 +5,7 @@ import {
   Send, Pin, Trash2, Hand, Smile, Plus, Upload, Download, X, Loader2,
   Sparkles, Lock, Unlock, Eye, EyeOff, Radio, FileText, Users as UsersIcon,
   ListChecks, ArrowLeft, MessageSquare, Video, NotebookPen, Wand2, Palette,
-  MicOff, UserX, Star, Clock, VenetianMask, DoorOpen,
+  MicOff, UserX, Star, Clock, VenetianMask, DoorOpen, Check,
 } from "lucide-react";
 import { format, formatDistanceToNow, formatDistanceStrict } from "date-fns";
 import { toast } from "sonner";
