@@ -51,7 +51,10 @@ type SessionExtras = {
   spotlight_user_id: string | null;
   started_at: string | null;
   allow_anonymous: boolean;
+  locked: boolean;
+  focus_mode: boolean;
 };
+
 
 type Profile = { id: string; display_name: string | null; avatar_url: string | null };
 type Message = { id: string; user_id: string; content: string; pinned: boolean; created_at: string };
@@ -89,6 +92,8 @@ export function SessionRoom({
     spotlight_user_id: null,
     started_at: null,
     allow_anonymous: true,
+    locked: session.locked,
+    focus_mode: session.focus_mode,
   });
   const [useAnon, setUseAnon] = useState(false);
   const [anonName, setAnonName] = useState<string | null>(null);
@@ -96,11 +101,11 @@ export function SessionRoom({
     "video" | "chat" | "notes" | "board" | "resources" | "polls" | "people" | "breakouts" | "summary"
   >("video");
 
-  // Load session extras (agenda/spotlight/started_at/allow_anonymous)
+  // Load session extras (agenda/spotlight/started_at/allow_anonymous/locked/focus)
   useEffect(() => {
     supabase
       .from("sessions")
-      .select("agenda, spotlight_user_id, started_at, allow_anonymous")
+      .select("agenda, spotlight_user_id, started_at, allow_anonymous, locked, focus_mode")
       .eq("id", session.id)
       .maybeSingle()
       .then(({ data }) => {
@@ -110,6 +115,8 @@ export function SessionRoom({
             spotlight_user_id: data.spotlight_user_id ?? null,
             started_at: data.started_at ?? null,
             allow_anonymous: data.allow_anonymous ?? true,
+            locked: data.locked ?? false,
+            focus_mode: data.focus_mode ?? false,
           });
         }
       });
@@ -125,6 +132,8 @@ export function SessionRoom({
             spotlight_user_id: (n.spotlight_user_id as string | null) ?? null,
             started_at: (n.started_at as string | null) ?? null,
             allow_anonymous: (n.allow_anonymous as boolean) ?? true,
+            locked: (n.locked as boolean) ?? false,
+            focus_mode: (n.focus_mode as boolean) ?? false,
           }));
         },
       )
@@ -133,6 +142,7 @@ export function SessionRoom({
   }, [session.id]);
 
   const effectiveDisplayName = useAnon && anonName ? anonName : myDisplayName;
+
 
 
 
