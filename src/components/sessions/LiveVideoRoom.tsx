@@ -4,9 +4,16 @@ import {
   LiveKitRoom,
   VideoConference,
   RoomAudioRenderer,
+  useRoomContext,
+  useLocalParticipant,
 } from "@livekit/components-react";
 import "@livekit/components-styles";
-import { Loader2, VideoOff, AlertTriangle } from "lucide-react";
+import {
+  Loader2, VideoOff, AlertTriangle, MonitorUp, MonitorX, Mic, MicOff,
+  Video as VideoIcon, PhoneOff,
+} from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { getLiveKitToken, getBreakoutToken } from "@/lib/livekit.functions";
 
 export function LiveVideoRoom({
@@ -14,11 +21,13 @@ export function LiveVideoRoom({
   displayName,
   lowBandwidth,
   breakoutId,
+  onLeave,
 }: {
   sessionId: string;
   displayName: string;
   lowBandwidth: boolean;
   breakoutId?: string | null;
+  onLeave?: () => void;
 }) {
   const fetchToken = useServerFn(getLiveKitToken);
   const fetchBreakoutToken = useServerFn(getBreakoutToken);
@@ -87,7 +96,7 @@ export function LiveVideoRoom({
   }
 
   return (
-    <div className="h-full overflow-hidden rounded-2xl" data-lk-theme="default">
+    <div className="flex h-full flex-col overflow-hidden rounded-2xl" data-lk-theme="default">
       <LiveKitRoom
         key={breakoutId ?? "main"}
         serverUrl={state.url}
@@ -96,11 +105,95 @@ export function LiveVideoRoom({
         video={!lowBandwidth}
         audio
         data-lk-theme="default"
-        style={{ height: "100%", minHeight: 400 }}
+        style={{ height: "100%", minHeight: 400, display: "flex", flexDirection: "column" }}
       >
-        <VideoConference />
+        <RoomControls onLeave={onLeave} />
+        <div className="flex-1 min-h-[320px]">
+          <VideoConference />
+        </div>
         <RoomAudioRenderer />
       </LiveKitRoom>
+    </div>
+  );
+}
+
+/** Explicit mic / camera / screen-share / leave controls — always visible. */
+function RoomControls({ onLeave }: { onLeave?: () => void }) {
+  const room = useRoomContext();
+  const { localParticipant } = useLocalParticipant();
+  const [sharing, setSharing] = useState(false);
+  const [micOn, setMicOn] = useState(true);
+  const [camOn, setCamOn] = useState(true);
+  const [leaving, setLeaving] = useState(false);
+
+  useEffect(() => {
+    if (!localParticipant) return;
+    setMicOn(localParticipant.isMicrophoneEnabled);
+    setCamOn(localParticipant.isCameraEnabled);
+    setSharing(localParticipant.isScreenShareEnabled);
+  }, [localParticipant]);
+
+  const toggleMic = async () => {
+    if (!localParticipant) return;
+    const next = !micOn;
+    await localParticipant.setMicrophoneEnabled(next);
+    setMicOn(next);
+  };
+
+  const toggleCam = async () => {
+    if (!localParticipant) return;
+    const next = !camOn;
+    await localParticipant.setCameraEnabled(next);
+    setCamOn(next);
+  };
+
+  const toggleShare = async () => {
+    if (!localParticipant) return;
+    const next = !sharing;
+    try {
+      await localParticipant.setScreenShareEnabled(next, { audio: true });
+      setSharing(next);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Screen share failed";
+      if (!/permission|denied|abort/i.test(msg)) toast.error(msg);
+    }
+  };
+
+  const leave = async () => {
+    setLeaving(true);
+    try {
+      await room.disconnect(true);
+    } catch {
+      /* already gone */
+    } finally {
+      setLeaving(false);
+      onLeave?.();
+    }
+  };
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 border-b border-border/50 bg-card/80 px-3 py-2 backdrop-blur">
+      <Button size="sm" variant={micOn ? "outline" : "secondary"} className="rounded-full" onClick={toggleMic}>
+        {micOn ? <Mic className="mr-1 h-3.5 w-3.5" /> : <MicOff className="mr-1 h-3.5 w-3.5 text-destructive" />}
+        {micOn ? "Mic on" : "Mic off"}
+      </Button>
+      <Button size="sm" variant={camOn ? "outline" : "secondary"} className="rounded-full" onClick={toggleCam}>
+        {camOn ? <VideoIcon className="mr-1 h-3.5 w-3.5" /> : <VideoOff className="mr-1 h-3.5 w-3.5 text-destructive" />}
+        {camOn ? "Camera on" : "Camera off"}
+      </Button>
+      <Button
+        size="sm"
+        variant={sharing ? "default" : "outline"}
+        className={`rounded-full ${sharing ? "bg-brand-gradient text-white" : ""}`}
+        onClick={toggleShare}
+      >
+        {sharing ? <MonitorX className="mr-1 h-3.5 w-3.5" /> : <MonitorUp className="mr-1 h-3.5 w-3.5" />}
+        {sharing ? "Stop sharing" : "Share screen"}
+      </Button>
+      <Button size="sm" variant="destructive" className="ml-auto rounded-full" onClick={leave} disabled={leaving}>
+        {leaving ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <PhoneOff className="mr-1 h-3.5 w-3.5" />}
+        Leave
+      </Button>
     </div>
   );
 }
