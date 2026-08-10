@@ -17,6 +17,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Switch } from "@/components/ui/switch";
+
 import { LiveVideoRoom } from "./LiveVideoRoom";
 import { ExitReflection } from "./ExitReflection";
 import { Whiteboard } from "./Whiteboard";
@@ -198,21 +200,24 @@ export function SessionRoom({
     return () => { supabase.removeChannel(ch); };
   }, [isTutor, session.id, currentUserId, navigate]);
 
-  const toggleLock = async () => {
-    const { error } = await supabase
-      .from("sessions")
-      .update({ locked: !session.locked })
-      .eq("id", session.id);
-    if (error) toast.error(error.message);
-    else toast.success(session.locked ? "Session unlocked" : "Session locked");
+  const setLocked = async (next: boolean) => {
+    setExtras((p) => ({ ...p, locked: next }));
+    const { error } = await supabase.from("sessions").update({ locked: next }).eq("id", session.id);
+    if (error) {
+      setExtras((p) => ({ ...p, locked: !next }));
+      toast.error(error.message);
+    } else {
+      toast.success(next ? "Room locked — new arrivals wait to be let in" : "Room unlocked — anyone enrolled can walk in");
+    }
   };
 
-  const toggleFocus = async () => {
-    const { error } = await supabase
-      .from("sessions")
-      .update({ focus_mode: !session.focus_mode })
-      .eq("id", session.id);
-    if (error) toast.error(error.message);
+  const setFocus = async (next: boolean) => {
+    setExtras((p) => ({ ...p, focus_mode: next }));
+    const { error } = await supabase.from("sessions").update({ focus_mode: next }).eq("id", session.id);
+    if (error) {
+      setExtras((p) => ({ ...p, focus_mode: !next }));
+      toast.error(error.message);
+    }
   };
 
   const toggleAnonymous = () => {
@@ -222,6 +227,7 @@ export function SessionRoom({
         const pool = ["Lynx", "Otter", "Falcon", "Panda", "Fox", "Koala", "Heron", "Wolf", "Deer", "Owl"];
         setAnonName(`Anon ${pool[Math.floor(Math.random() * pool.length)]}`);
       }
+      toast.info(next ? "You now appear under a nickname — ask anything." : "Your real name is showing again.");
       return next;
     });
   };
@@ -229,7 +235,7 @@ export function SessionRoom({
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 border-b border-border/50 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <div className="flex items-center gap-3 min-w-0">
             <Button variant="ghost" size="sm" onClick={leave} className="shrink-0">
               <ArrowLeft className="h-4 w-4" />
@@ -239,33 +245,50 @@ export function SessionRoom({
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Badge variant="outline" className="rounded-full capitalize">{session.status}</Badge>
                 {session.is_homework_help && <Badge variant="secondary" className="rounded-full">Homework</Badge>}
-                {session.locked && <Badge variant="destructive" className="rounded-full">Locked</Badge>}
-                {session.focus_mode && <Badge variant="secondary" className="rounded-full">Focus</Badge>}
+                {extras.locked && (
+                  <Badge variant="destructive" className="rounded-full gap-1"><Lock className="h-3 w-3" /> Room locked</Badge>
+                )}
+                {extras.focus_mode && <Badge variant="secondary" className="rounded-full">Focus</Badge>}
                 {activeBreakoutId && <Badge className="rounded-full bg-primary/15 text-primary">Breakout</Badge>}
                 {useAnon && <Badge variant="secondary" className="rounded-full">Anon: {anonName}</Badge>}
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {extras.allow_anonymous && !isTutor && (
-              <Button size="sm" variant="ghost" onClick={toggleAnonymous} title="Toggle anonymous name">
-                <VenetianMask className={`h-4 w-4 ${useAnon ? "text-primary" : ""}`} />
+              <Button
+                size="sm"
+                variant={useAnon ? "default" : "outline"}
+                className={`rounded-full ${useAnon ? "bg-brand-gradient text-white" : ""}`}
+                onClick={toggleAnonymous}
+                title="Ask questions under a nickname instead of your real name"
+              >
+                <VenetianMask className="mr-1 h-3.5 w-3.5" />
+                {useAnon ? "Nickname on" : "Ask anonymously"}
               </Button>
             )}
-            <Button size="sm" variant="ghost" onClick={() => setLowBandwidth((v) => !v)} title="Low bandwidth mode">
-              {lowBandwidth ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            <Button size="sm" variant="outline" className="rounded-full" onClick={() => setLowBandwidth((v) => !v)} title="Turn video off to save data">
+              {lowBandwidth ? <EyeOff className="mr-1 h-3.5 w-3.5" /> : <Eye className="mr-1 h-3.5 w-3.5" />}
+              {lowBandwidth ? "Low data" : "Full video"}
             </Button>
             {isTutor && (
               <>
-                <Button size="sm" variant="ghost" onClick={toggleFocus} title="Focus mode">
-                  <Radio className="h-4 w-4" />
-                </Button>
-                <Button size="sm" variant="ghost" onClick={toggleLock} title={session.locked ? "Unlock" : "Lock"}>
-                  {session.locked ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
-                </Button>
+                <label className="flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-xs">
+                  <Radio className="h-3.5 w-3.5" />
+                  <span>Focus mode</span>
+                  <Switch checked={extras.focus_mode} onCheckedChange={setFocus} aria-label="Focus mode" />
+                </label>
+                <label className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs ${extras.locked ? "border-destructive/50 bg-destructive/10 text-destructive" : "border-border"}`}>
+                  {extras.locked ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
+                  <span>{extras.locked ? "Locked" : "Lock room"}</span>
+                  <Switch checked={extras.locked} onCheckedChange={setLocked} aria-label="Lock room" />
+                </label>
               </>
             )}
+            <Button size="sm" variant="destructive" className="rounded-full" onClick={leave}>
+              <DoorOpen className="mr-1 h-3.5 w-3.5" /> Leave
+            </Button>
           </div>
         </div>
       </header>
@@ -281,8 +304,10 @@ export function SessionRoom({
               displayName={effectiveDisplayName}
               lowBandwidth={lowBandwidth}
               breakoutId={activeBreakoutId}
+              onLeave={leave}
             />
           </div>
+
           {activeBreakoutId && (
             <div className="mt-2 rounded-xl border border-primary/30 bg-primary/5 p-2 text-center text-xs">
               You're in a breakout room. <button onClick={() => setActiveBreakoutId(null)} className="font-semibold text-primary underline">Return to main room</button>
