@@ -8,18 +8,19 @@ export const Route = createFileRoute("/safety")({
   head: () => ({
     meta: [
       { title: "Safety — Learnova" },
-      { name: "description", content: "How Learnova keeps students safe: parent consent, moderation, verified tutor progression, reporting." },
+      { name: "description", content: "How Learnova keeps students safe: moderation, verified tutor progression, safe communication and one-tap reporting." },
     ],
   }),
   component: SafetyPage,
 });
 
 const pillars = [
-  { icon: Users, title: "Parent / guardian consent", body: "Anyone under 18 needs guardian consent before monetizing sessions or unlocking certain features." },
   { icon: ShieldCheck, title: "Verified tutor progression", body: "Every session on Learnova is free, always. Tutors build a public trust score from sessions taught and learner ratings, so you always know who you’re learning from." },
   { icon: Flag, title: "Reporting & AI moderation", body: "Offensive language is auto-flagged. One tap reports any user, session, or community for review." },
   { icon: Lock, title: "Safe communication", body: "External contact sharing is blocked. Messaging is moderated and tied to sessions, not private DMs by default." },
+  { icon: Users, title: "Host controls in every room", body: "Hosts can mute, remove, spotlight or lock the room, and a waiting room keeps unexpected guests out until they're let in." },
 ];
+
 
 function SafetyPage() {
   return (
@@ -32,8 +33,9 @@ function SafetyPage() {
           </span>
           <h1 className="mt-5 text-4xl font-bold tracking-tight md:text-5xl">Built so students stay safe.</h1>
           <p className="mt-4 mx-auto max-w-2xl text-muted-foreground">
-            Learnova is designed for ages 13+. Every part of the platform is shaped by safety and trust — from onboarding to payouts.
+            Learnova is designed for ages 13+. Every part of the platform is shaped by safety and trust — from onboarding to the live classroom.
           </p>
+
         </div>
         <div className="mt-12 grid gap-5 md:grid-cols-2">
           {pillars.map((p) => (

@@ -153,8 +153,11 @@ function NewCoursePage() {
         <p className="mt-1 text-sm text-muted-foreground">
           {track === "workshop"
             ? "One day is fine — add more only if your workshop runs as a series."
-            : "Minimum 3 days, each with its own blueprint. Learners must notify you at least an hour before to be excused."}
+            : track === "kids"
+              ? "One day is fine — add more if your class runs as a series."
+              : "Minimum 3 days, each with its own blueprint."}
         </p>
+
 
         <form onSubmit={submit} className="glass mt-6 space-y-4 rounded-3xl p-6 shadow-soft">
           <div className="space-y-1.5">
