@@ -5,11 +5,13 @@ import {
   RoomAudioRenderer,
   useParticipants,
   useLocalParticipant,
+  useRoomContext,
   useTracks,
   ParticipantContext,
   useIsMuted,
   useIsSpeaking,
 } from "@livekit/components-react";
+
 import "@livekit/components-styles";
 import { Track, type Participant } from "livekit-client";
 import { Loader2, Mic, MicOff, PhoneOff, Volume2, AlertTriangle, VideoOff } from "lucide-react";
@@ -109,8 +111,10 @@ export function CommunityVoiceRoom({
 
 function VoiceRoomUI({ channelName, onLeave }: { channelName: string; onLeave: () => void }) {
   const participants = useParticipants();
+  const room = useRoomContext();
   const { localParticipant } = useLocalParticipant();
   const [muted, setMuted] = useState(!localParticipant?.isMicrophoneEnabled);
+  const [leaving, setLeaving] = useState(false);
   // Subscribe to remote audio tracks so RoomAudioRenderer plays them.
   useTracks([Track.Source.Microphone], { onlySubscribed: false });
 
@@ -119,6 +123,21 @@ function VoiceRoomUI({ channelName, onLeave }: { channelName: string; onLeave: (
     const next = !muted;
     await localParticipant.setMicrophoneEnabled(!next);
     setMuted(next);
+  };
+
+  // Actually disconnect from LiveKit before handing control back to the page —
+  // otherwise the mic stays live and "Leave" appears to do nothing.
+  const leave = async () => {
+    setLeaving(true);
+    try {
+      await localParticipant?.setMicrophoneEnabled(false);
+      await room.disconnect(true);
+    } catch {
+      /* already disconnected */
+    } finally {
+      setLeaving(false);
+      onLeave();
+    }
   };
 
   return (
@@ -130,6 +149,10 @@ function VoiceRoomUI({ channelName, onLeave }: { channelName: string; onLeave: (
             {participants.length} in voice
           </span>
         </h2>
+        <Button size="sm" variant="destructive" className="rounded-full" onClick={leave} disabled={leaving}>
+          {leaving ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <PhoneOff className="mr-1 h-3.5 w-3.5" />}
+          Leave
+        </Button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4">
@@ -158,13 +181,15 @@ function VoiceRoomUI({ channelName, onLeave }: { channelName: string; onLeave: (
           {muted ? <MicOff className="mr-2 h-4 w-4" /> : <Mic className="mr-2 h-4 w-4" />}
           {muted ? "Unmute" : "Mute"}
         </Button>
-        <Button size="lg" variant="destructive" className="rounded-full" onClick={onLeave}>
-          <PhoneOff className="mr-2 h-4 w-4" /> Leave voice
+        <Button size="lg" variant="destructive" className="rounded-full" onClick={leave} disabled={leaving}>
+          {leaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PhoneOff className="mr-2 h-4 w-4" />}
+          Leave voice
         </Button>
       </div>
     </div>
   );
 }
+
 
 function VoiceTile({ participant, isSelf }: { participant: Participant; isSelf: boolean }) {
   const isMuted = useIsMuted({ source: Track.Source.Microphone, participant });

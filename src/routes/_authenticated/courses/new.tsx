@@ -51,17 +51,18 @@ function NewCoursePage() {
   const [seats, setSeats] = useState("30");
   const [startsOn, setStartsOn] = useState("");
   const [outcomes, setOutcomes] = useState("");
-  // Workshops can be a single day; training and kids courses need a real roadmap.
-  const minDays = track === "workshop" ? 1 : 3;
+  // Only Training courses need a 3-day roadmap. Workshops and kids classes can be a single day.
+  const minDays = track === "training" ? 3 : 1;
   const [days, setDays] = useState<Day[]>(
-    track === "workshop"
-      ? [{ title: "Session plan", blueprint: "" }]
-      : [
+    track === "training"
+      ? [
           { title: "Day 1 — Basics & tools", blueprint: "" },
           { title: "Day 2 — Core practice", blueprint: "" },
           { title: "Day 3 — Mastery check", blueprint: "" },
-        ],
+        ]
+      : [{ title: track === "kids" ? "Class plan" : "Session plan", blueprint: "" }],
   );
+
 
   useEffect(() => {
     supabase.from("categories").select("id, name").order("name").then(({ data }) => setCategories(data ?? []));
@@ -153,8 +154,11 @@ function NewCoursePage() {
         <p className="mt-1 text-sm text-muted-foreground">
           {track === "workshop"
             ? "One day is fine — add more only if your workshop runs as a series."
-            : "Minimum 3 days, each with its own blueprint. Learners must notify you at least an hour before to be excused."}
+            : track === "kids"
+              ? "One day is fine — add more if your class runs as a series."
+              : "Minimum 3 days, each with its own blueprint."}
         </p>
+
 
         <form onSubmit={submit} className="glass mt-6 space-y-4 rounded-3xl p-6 shadow-soft">
           <div className="space-y-1.5">

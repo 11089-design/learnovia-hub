@@ -5,7 +5,7 @@ import {
   Send, Pin, Trash2, Hand, Smile, Plus, Upload, Download, X, Loader2,
   Sparkles, Lock, Unlock, Eye, EyeOff, Radio, FileText, Users as UsersIcon,
   ListChecks, ArrowLeft, MessageSquare, Video, NotebookPen, Wand2, Palette,
-  MicOff, UserX, Star, Clock, VenetianMask, DoorOpen,
+  MicOff, UserX, Star, Clock, VenetianMask, DoorOpen, Check,
 } from "lucide-react";
 import { format, formatDistanceToNow, formatDistanceStrict } from "date-fns";
 import { toast } from "sonner";
@@ -17,6 +17,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Switch } from "@/components/ui/switch";
+
 import { LiveVideoRoom } from "./LiveVideoRoom";
 import { ExitReflection } from "./ExitReflection";
 import { Whiteboard } from "./Whiteboard";
@@ -51,7 +53,10 @@ type SessionExtras = {
   spotlight_user_id: string | null;
   started_at: string | null;
   allow_anonymous: boolean;
+  locked: boolean;
+  focus_mode: boolean;
 };
+
 
 type Profile = { id: string; display_name: string | null; avatar_url: string | null };
 type Message = { id: string; user_id: string; content: string; pinned: boolean; created_at: string };
@@ -89,6 +94,8 @@ export function SessionRoom({
     spotlight_user_id: null,
     started_at: null,
     allow_anonymous: true,
+    locked: session.locked,
+    focus_mode: session.focus_mode,
   });
   const [useAnon, setUseAnon] = useState(false);
   const [anonName, setAnonName] = useState<string | null>(null);
@@ -96,11 +103,11 @@ export function SessionRoom({
     "video" | "chat" | "notes" | "board" | "resources" | "polls" | "people" | "breakouts" | "summary"
   >("video");
 
-  // Load session extras (agenda/spotlight/started_at/allow_anonymous)
+  // Load session extras (agenda/spotlight/started_at/allow_anonymous/locked/focus)
   useEffect(() => {
     supabase
       .from("sessions")
-      .select("agenda, spotlight_user_id, started_at, allow_anonymous")
+      .select("agenda, spotlight_user_id, started_at, allow_anonymous, locked, focus_mode")
       .eq("id", session.id)
       .maybeSingle()
       .then(({ data }) => {
@@ -110,6 +117,8 @@ export function SessionRoom({
             spotlight_user_id: data.spotlight_user_id ?? null,
             started_at: data.started_at ?? null,
             allow_anonymous: data.allow_anonymous ?? true,
+            locked: data.locked ?? false,
+            focus_mode: data.focus_mode ?? false,
           });
         }
       });
@@ -125,6 +134,8 @@ export function SessionRoom({
             spotlight_user_id: (n.spotlight_user_id as string | null) ?? null,
             started_at: (n.started_at as string | null) ?? null,
             allow_anonymous: (n.allow_anonymous as boolean) ?? true,
+            locked: (n.locked as boolean) ?? false,
+            focus_mode: (n.focus_mode as boolean) ?? false,
           }));
         },
       )
@@ -133,6 +144,7 @@ export function SessionRoom({
   }, [session.id]);
 
   const effectiveDisplayName = useAnon && anonName ? anonName : myDisplayName;
+
 
 
 
@@ -188,21 +200,24 @@ export function SessionRoom({
     return () => { supabase.removeChannel(ch); };
   }, [isTutor, session.id, currentUserId, navigate]);
 
-  const toggleLock = async () => {
-    const { error } = await supabase
-      .from("sessions")
-      .update({ locked: !session.locked })
-      .eq("id", session.id);
-    if (error) toast.error(error.message);
-    else toast.success(session.locked ? "Session unlocked" : "Session locked");
+  const setLocked = async (next: boolean) => {
+    setExtras((p) => ({ ...p, locked: next }));
+    const { error } = await supabase.from("sessions").update({ locked: next }).eq("id", session.id);
+    if (error) {
+      setExtras((p) => ({ ...p, locked: !next }));
+      toast.error(error.message);
+    } else {
+      toast.success(next ? "Room locked — new arrivals wait to be let in" : "Room unlocked — anyone enrolled can walk in");
+    }
   };
 
-  const toggleFocus = async () => {
-    const { error } = await supabase
-      .from("sessions")
-      .update({ focus_mode: !session.focus_mode })
-      .eq("id", session.id);
-    if (error) toast.error(error.message);
+  const setFocus = async (next: boolean) => {
+    setExtras((p) => ({ ...p, focus_mode: next }));
+    const { error } = await supabase.from("sessions").update({ focus_mode: next }).eq("id", session.id);
+    if (error) {
+      setExtras((p) => ({ ...p, focus_mode: !next }));
+      toast.error(error.message);
+    }
   };
 
   const toggleAnonymous = () => {
@@ -212,6 +227,7 @@ export function SessionRoom({
         const pool = ["Lynx", "Otter", "Falcon", "Panda", "Fox", "Koala", "Heron", "Wolf", "Deer", "Owl"];
         setAnonName(`Anon ${pool[Math.floor(Math.random() * pool.length)]}`);
       }
+      toast.info(next ? "You now appear under a nickname — ask anything." : "Your real name is showing again.");
       return next;
     });
   };
@@ -219,7 +235,7 @@ export function SessionRoom({
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 border-b border-border/50 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <div className="flex items-center gap-3 min-w-0">
             <Button variant="ghost" size="sm" onClick={leave} className="shrink-0">
               <ArrowLeft className="h-4 w-4" />
@@ -229,33 +245,50 @@ export function SessionRoom({
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Badge variant="outline" className="rounded-full capitalize">{session.status}</Badge>
                 {session.is_homework_help && <Badge variant="secondary" className="rounded-full">Homework</Badge>}
-                {session.locked && <Badge variant="destructive" className="rounded-full">Locked</Badge>}
-                {session.focus_mode && <Badge variant="secondary" className="rounded-full">Focus</Badge>}
+                {extras.locked && (
+                  <Badge variant="destructive" className="rounded-full gap-1"><Lock className="h-3 w-3" /> Room locked</Badge>
+                )}
+                {extras.focus_mode && <Badge variant="secondary" className="rounded-full">Focus</Badge>}
                 {activeBreakoutId && <Badge className="rounded-full bg-primary/15 text-primary">Breakout</Badge>}
                 {useAnon && <Badge variant="secondary" className="rounded-full">Anon: {anonName}</Badge>}
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {extras.allow_anonymous && !isTutor && (
-              <Button size="sm" variant="ghost" onClick={toggleAnonymous} title="Toggle anonymous name">
-                <VenetianMask className={`h-4 w-4 ${useAnon ? "text-primary" : ""}`} />
+              <Button
+                size="sm"
+                variant={useAnon ? "default" : "outline"}
+                className={`rounded-full ${useAnon ? "bg-brand-gradient text-white" : ""}`}
+                onClick={toggleAnonymous}
+                title="Ask questions under a nickname instead of your real name"
+              >
+                <VenetianMask className="mr-1 h-3.5 w-3.5" />
+                {useAnon ? "Nickname on" : "Ask anonymously"}
               </Button>
             )}
-            <Button size="sm" variant="ghost" onClick={() => setLowBandwidth((v) => !v)} title="Low bandwidth mode">
-              {lowBandwidth ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            <Button size="sm" variant="outline" className="rounded-full" onClick={() => setLowBandwidth((v) => !v)} title="Turn video off to save data">
+              {lowBandwidth ? <EyeOff className="mr-1 h-3.5 w-3.5" /> : <Eye className="mr-1 h-3.5 w-3.5" />}
+              {lowBandwidth ? "Low data" : "Full video"}
             </Button>
             {isTutor && (
               <>
-                <Button size="sm" variant="ghost" onClick={toggleFocus} title="Focus mode">
-                  <Radio className="h-4 w-4" />
-                </Button>
-                <Button size="sm" variant="ghost" onClick={toggleLock} title={session.locked ? "Unlock" : "Lock"}>
-                  {session.locked ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
-                </Button>
+                <label className="flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-xs">
+                  <Radio className="h-3.5 w-3.5" />
+                  <span>Focus mode</span>
+                  <Switch checked={extras.focus_mode} onCheckedChange={setFocus} aria-label="Focus mode" />
+                </label>
+                <label className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs ${extras.locked ? "border-destructive/50 bg-destructive/10 text-destructive" : "border-border"}`}>
+                  {extras.locked ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
+                  <span>{extras.locked ? "Locked" : "Lock room"}</span>
+                  <Switch checked={extras.locked} onCheckedChange={setLocked} aria-label="Lock room" />
+                </label>
               </>
             )}
+            <Button size="sm" variant="destructive" className="rounded-full" onClick={leave}>
+              <DoorOpen className="mr-1 h-3.5 w-3.5" /> Leave
+            </Button>
           </div>
         </div>
       </header>
@@ -271,8 +304,10 @@ export function SessionRoom({
               displayName={effectiveDisplayName}
               lowBandwidth={lowBandwidth}
               breakoutId={activeBreakoutId}
+              onLeave={leave}
             />
           </div>
+
           {activeBreakoutId && (
             <div className="mt-2 rounded-xl border border-primary/30 bg-primary/5 p-2 text-center text-xs">
               You're in a breakout room. <button onClick={() => setActiveBreakoutId(null)} className="font-semibold text-primary underline">Return to main room</button>
@@ -768,9 +803,29 @@ function PollsPanel({ sessionId, userId, isTutor }: { sessionId: string; userId:
     setQ(""); setOpts(["", ""]); setCreating(false);
   };
 
+  // Voting is optimistic and changeable, so you always see your own choice instantly.
   const vote = async (pollId: string, idx: number) => {
-    const { error } = await supabase.from("session_poll_votes").insert({ poll_id: pollId, user_id: userId, option_index: idx });
-    if (error) toast.error(error.message.includes("duplicate") ? "You already voted" : error.message);
+    const existing = votes.find((v) => v.poll_id === pollId && v.user_id === userId);
+    if (existing?.option_index === idx) return;
+    setVotes((cur) => [
+      ...cur.filter((v) => !(v.poll_id === pollId && v.user_id === userId)),
+      { poll_id: pollId, user_id: userId, option_index: idx },
+    ]);
+    if (existing) {
+      await supabase.from("session_poll_votes").delete().eq("poll_id", pollId).eq("user_id", userId);
+    }
+    const { error } = await supabase
+      .from("session_poll_votes")
+      .insert({ poll_id: pollId, user_id: userId, option_index: idx });
+    if (error) {
+      toast.error(error.message);
+      setVotes((cur) => cur.filter((v) => !(v.poll_id === pollId && v.user_id === userId)));
+    }
+  };
+
+  const closePoll = async (pollId: string, closed: boolean) => {
+    const { error } = await supabase.from("session_polls").update({ closed }).eq("id", pollId);
+    if (error) toast.error(error.message);
   };
 
   return (
@@ -810,7 +865,10 @@ function PollsPanel({ sessionId, userId, isTutor }: { sessionId: string; userId:
               const total = pollVotes.length;
               return (
                 <li key={p.id} className="rounded-xl border border-border/60 p-3">
-                  <p className="text-sm font-semibold">{p.question}</p>
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-sm font-semibold">{p.question}</p>
+                    {p.closed && <Badge variant="outline" className="rounded-full text-[9px]">Closed</Badge>}
+                  </div>
                   <div className="mt-2 space-y-1.5">
                     {p.options.map((opt, idx) => {
                       const count = pollVotes.filter((v) => v.option_index === idx).length;
@@ -819,19 +877,42 @@ function PollsPanel({ sessionId, userId, isTutor }: { sessionId: string; userId:
                       return (
                         <button
                           key={idx}
-                          disabled={!!myVote}
+                          disabled={p.closed}
                           onClick={() => vote(p.id, idx)}
-                          className={`relative w-full overflow-hidden rounded-lg border px-3 py-1.5 text-left text-xs transition ${picked ? "border-primary bg-primary/10" : "border-border hover:bg-accent/30"} ${myVote ? "cursor-default" : ""}`}
+                          className={`relative w-full overflow-hidden rounded-lg border px-3 py-2 text-left text-xs transition ${
+                            picked ? "border-primary ring-1 ring-primary/50" : "border-border hover:bg-accent/30"
+                          } ${p.closed ? "cursor-default opacity-90" : ""}`}
                         >
-                          {myVote && (
-                            <div className="absolute inset-y-0 left-0 bg-primary/15" style={{ width: `${pct}%` }} />
-                          )}
-                          <span className="relative flex justify-between"><span>{opt}</span>{myVote && <span className="text-muted-foreground">{pct}%</span>}</span>
+                          <div
+                            className={`absolute inset-y-0 left-0 transition-all ${picked ? "bg-primary/25" : "bg-primary/10"}`}
+                            style={{ width: `${pct}%` }}
+                          />
+                          <span className="relative flex items-center gap-2">
+                            <span className={`grid h-4 w-4 shrink-0 place-items-center rounded-full border ${picked ? "border-primary bg-primary text-white" : "border-muted-foreground/40"}`}>
+                              {picked && <Check className="h-2.5 w-2.5" />}
+                            </span>
+                            <span className="flex-1 truncate">{opt}</span>
+                            <span className={`shrink-0 tabular-nums ${picked ? "font-semibold text-primary" : "text-muted-foreground"}`}>
+                              {count} {count === 1 ? "vote" : "votes"} · {pct}%
+                            </span>
+                          </span>
                         </button>
                       );
                     })}
                   </div>
-                  <p className="mt-2 text-[10px] text-muted-foreground">{total} {total === 1 ? "vote" : "votes"}</p>
+                  <div className="mt-2 flex items-center justify-between">
+                    <p className="text-[10px] text-muted-foreground">
+                      {total} {total === 1 ? "vote" : "votes"} total
+                      {myVote
+                        ? ` · you picked “${p.options[myVote.option_index]}”${p.closed ? "" : " — tap another to change"}`
+                        : p.closed ? "" : " · tap an option to vote"}
+                    </p>
+                    {isTutor && (
+                      <button onClick={() => closePoll(p.id, !p.closed)} className="text-[10px] text-primary hover:underline">
+                        {p.closed ? "Reopen" : "Close poll"}
+                      </button>
+                    )}
+                  </div>
                 </li>
               );
             })}
@@ -840,6 +921,7 @@ function PollsPanel({ sessionId, userId, isTutor }: { sessionId: string; userId:
       </ScrollArea>
     </div>
   );
+
 }
 
 /* ----------------------------- People panel --------------------------- */

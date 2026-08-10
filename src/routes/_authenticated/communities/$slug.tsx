@@ -204,8 +204,13 @@ function CommunityPage() {
                   channelId={activeChannel.id}
                   channelName={activeChannel.name}
                   displayName={myName}
-                  onLeave={() => { /* stays on channel; user can rejoin */ }}
+                  onLeave={() => {
+                    // Drop back into a text channel so the voice room fully unmounts.
+                    const text = channels.find((c) => c.kind === "text");
+                    setActiveChannel(text ?? null);
+                  }}
                 />
+
               ) : (
                 <div className="grid h-[calc(100vh-12rem)] place-items-center p-6 text-center text-sm text-muted-foreground">
                   Join the community to enter voice.
