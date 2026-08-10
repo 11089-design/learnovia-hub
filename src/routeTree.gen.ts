@@ -13,6 +13,7 @@ import { Route as WorkshopsRouteImport } from './routes/workshops'
 import { Route as TrainingRouteImport } from './routes/training'
 import { Route as SafetyRouteImport } from './routes/safety'
 import { Route as KidsRouteImport } from './routes/kids'
+import { Route as GuideRouteImport } from './routes/guide'
 import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as CommunitiesRouteImport } from './routes/communities'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -54,6 +55,11 @@ const SafetyRoute = SafetyRouteImport.update({
 const KidsRoute = KidsRouteImport.update({
   id: '/kids',
   path: '/kids',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuideRoute = GuideRouteImport.update({
+  id: '/guide',
+  path: '/guide',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ExploreRoute = ExploreRouteImport.update({
@@ -182,6 +188,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/communities': typeof CommunitiesRoute
   '/explore': typeof ExploreRoute
+  '/guide': typeof GuideRoute
   '/kids': typeof KidsRoute
   '/safety': typeof SafetyRoute
   '/training': typeof TrainingRoute
@@ -209,6 +216,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/communities': typeof CommunitiesRoute
   '/explore': typeof ExploreRoute
+  '/guide': typeof GuideRoute
   '/kids': typeof KidsRoute
   '/safety': typeof SafetyRoute
   '/training': typeof TrainingRoute
@@ -238,6 +246,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/communities': typeof CommunitiesRoute
   '/explore': typeof ExploreRoute
+  '/guide': typeof GuideRoute
   '/kids': typeof KidsRoute
   '/safety': typeof SafetyRoute
   '/training': typeof TrainingRoute
@@ -267,6 +276,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/communities'
     | '/explore'
+    | '/guide'
     | '/kids'
     | '/safety'
     | '/training'
@@ -294,6 +304,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/communities'
     | '/explore'
+    | '/guide'
     | '/kids'
     | '/safety'
     | '/training'
@@ -322,6 +333,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/communities'
     | '/explore'
+    | '/guide'
     | '/kids'
     | '/safety'
     | '/training'
@@ -351,6 +363,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   CommunitiesRoute: typeof CommunitiesRoute
   ExploreRoute: typeof ExploreRoute
+  GuideRoute: typeof GuideRoute
   KidsRoute: typeof KidsRoute
   SafetyRoute: typeof SafetyRoute
   TrainingRoute: typeof TrainingRoute
@@ -385,6 +398,13 @@ declare module '@tanstack/react-router' {
       path: '/kids'
       fullPath: '/kids'
       preLoaderRoute: typeof KidsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guide': {
+      id: '/guide'
+      path: '/guide'
+      fullPath: '/guide'
+      preLoaderRoute: typeof GuideRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/explore': {
@@ -596,6 +616,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   CommunitiesRoute: CommunitiesRoute,
   ExploreRoute: ExploreRoute,
+  GuideRoute: GuideRoute,
   KidsRoute: KidsRoute,
   SafetyRoute: SafetyRoute,
   TrainingRoute: TrainingRoute,
