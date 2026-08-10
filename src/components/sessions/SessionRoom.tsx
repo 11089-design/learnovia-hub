@@ -803,9 +803,29 @@ function PollsPanel({ sessionId, userId, isTutor }: { sessionId: string; userId:
     setQ(""); setOpts(["", ""]); setCreating(false);
   };
 
+  // Voting is optimistic and changeable, so you always see your own choice instantly.
   const vote = async (pollId: string, idx: number) => {
-    const { error } = await supabase.from("session_poll_votes").insert({ poll_id: pollId, user_id: userId, option_index: idx });
-    if (error) toast.error(error.message.includes("duplicate") ? "You already voted" : error.message);
+    const existing = votes.find((v) => v.poll_id === pollId && v.user_id === userId);
+    if (existing?.option_index === idx) return;
+    setVotes((cur) => [
+      ...cur.filter((v) => !(v.poll_id === pollId && v.user_id === userId)),
+      { poll_id: pollId, user_id: userId, option_index: idx },
+    ]);
+    if (existing) {
+      await supabase.from("session_poll_votes").delete().eq("poll_id", pollId).eq("user_id", userId);
+    }
+    const { error } = await supabase
+      .from("session_poll_votes")
+      .insert({ poll_id: pollId, user_id: userId, option_index: idx });
+    if (error) {
+      toast.error(error.message);
+      setVotes((cur) => cur.filter((v) => !(v.poll_id === pollId && v.user_id === userId)));
+    }
+  };
+
+  const closePoll = async (pollId: string, closed: boolean) => {
+    const { error } = await supabase.from("session_polls").update({ closed }).eq("id", pollId);
+    if (error) toast.error(error.message);
   };
 
   return (
@@ -845,7 +865,10 @@ function PollsPanel({ sessionId, userId, isTutor }: { sessionId: string; userId:
               const total = pollVotes.length;
               return (
                 <li key={p.id} className="rounded-xl border border-border/60 p-3">
-                  <p className="text-sm font-semibold">{p.question}</p>
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-sm font-semibold">{p.question}</p>
+                    {p.closed && <Badge variant="outline" className="rounded-full text-[9px]">Closed</Badge>}
+                  </div>
                   <div className="mt-2 space-y-1.5">
                     {p.options.map((opt, idx) => {
                       const count = pollVotes.filter((v) => v.option_index === idx).length;
@@ -854,19 +877,42 @@ function PollsPanel({ sessionId, userId, isTutor }: { sessionId: string; userId:
                       return (
                         <button
                           key={idx}
-                          disabled={!!myVote}
+                          disabled={p.closed}
                           onClick={() => vote(p.id, idx)}
-                          className={`relative w-full overflow-hidden rounded-lg border px-3 py-1.5 text-left text-xs transition ${picked ? "border-primary bg-primary/10" : "border-border hover:bg-accent/30"} ${myVote ? "cursor-default" : ""}`}
+                          className={`relative w-full overflow-hidden rounded-lg border px-3 py-2 text-left text-xs transition ${
+                            picked ? "border-primary ring-1 ring-primary/50" : "border-border hover:bg-accent/30"
+                          } ${p.closed ? "cursor-default opacity-90" : ""}`}
                         >
-                          {myVote && (
-                            <div className="absolute inset-y-0 left-0 bg-primary/15" style={{ width: `${pct}%` }} />
-                          )}
-                          <span className="relative flex justify-between"><span>{opt}</span>{myVote && <span className="text-muted-foreground">{pct}%</span>}</span>
+                          <div
+                            className={`absolute inset-y-0 left-0 transition-all ${picked ? "bg-primary/25" : "bg-primary/10"}`}
+                            style={{ width: `${pct}%` }}
+                          />
+                          <span className="relative flex items-center gap-2">
+                            <span className={`grid h-4 w-4 shrink-0 place-items-center rounded-full border ${picked ? "border-primary bg-primary text-white" : "border-muted-foreground/40"}`}>
+                              {picked && <Check className="h-2.5 w-2.5" />}
+                            </span>
+                            <span className="flex-1 truncate">{opt}</span>
+                            <span className={`shrink-0 tabular-nums ${picked ? "font-semibold text-primary" : "text-muted-foreground"}`}>
+                              {count} {count === 1 ? "vote" : "votes"} · {pct}%
+                            </span>
+                          </span>
                         </button>
                       );
                     })}
                   </div>
-                  <p className="mt-2 text-[10px] text-muted-foreground">{total} {total === 1 ? "vote" : "votes"}</p>
+                  <div className="mt-2 flex items-center justify-between">
+                    <p className="text-[10px] text-muted-foreground">
+                      {total} {total === 1 ? "vote" : "votes"} total
+                      {myVote
+                        ? ` · you picked “${p.options[myVote.option_index]}”${p.closed ? "" : " — tap another to change"}`
+                        : p.closed ? "" : " · tap an option to vote"}
+                    </p>
+                    {isTutor && (
+                      <button onClick={() => closePoll(p.id, !p.closed)} className="text-[10px] text-primary hover:underline">
+                        {p.closed ? "Reopen" : "Close poll"}
+                      </button>
+                    )}
+                  </div>
                 </li>
               );
             })}
@@ -875,6 +921,7 @@ function PollsPanel({ sessionId, userId, isTutor }: { sessionId: string; userId:
       </ScrollArea>
     </div>
   );
+
 }
 
 /* ----------------------------- People panel --------------------------- */
