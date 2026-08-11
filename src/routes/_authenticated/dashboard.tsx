@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
-  Sparkles, LogOut, Calendar, MessageSquare, Users, Award, Flame, Plus, BookOpen, Shield, Compass,
+  Sparkles, LogOut, Calendar, MessageSquare, Users, Award, Flame, Plus, BookOpen, Shield, Compass, LifeBuoy,
   Trophy, Wand2, Star, TrendingUp, GraduationCap, ArrowRight,
 } from "lucide-react";
 import { TrophyMascot } from "@/components/LearnovaMascots";
