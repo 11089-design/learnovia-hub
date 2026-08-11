@@ -21,6 +21,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedVerifyRouteImport } from './routes/_authenticated/verify'
 import { Route as AuthenticatedStudyPlanRouteImport } from './routes/_authenticated/study-plan'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedLeaderboardRouteImport } from './routes/_authenticated/leaderboard'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -94,6 +95,11 @@ const AuthenticatedVerifyRoute = AuthenticatedVerifyRouteImport.update({
 const AuthenticatedStudyPlanRoute = AuthenticatedStudyPlanRouteImport.update({
   id: '/study-plan',
   path: '/study-plan',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
@@ -197,6 +203,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/study-plan': typeof AuthenticatedStudyPlanRoute
   '/verify': typeof AuthenticatedVerifyRoute
   '/communities/$slug': typeof AuthenticatedCommunitiesSlugRoute
@@ -225,6 +232,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/study-plan': typeof AuthenticatedStudyPlanRoute
   '/verify': typeof AuthenticatedVerifyRoute
   '/communities/$slug': typeof AuthenticatedCommunitiesSlugRoute
@@ -255,6 +263,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/study-plan': typeof AuthenticatedStudyPlanRoute
   '/_authenticated/verify': typeof AuthenticatedVerifyRoute
   '/_authenticated/communities/$slug': typeof AuthenticatedCommunitiesSlugRoute
@@ -285,6 +294,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/leaderboard'
     | '/onboarding'
+    | '/settings'
     | '/study-plan'
     | '/verify'
     | '/communities/$slug'
@@ -313,6 +323,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/leaderboard'
     | '/onboarding'
+    | '/settings'
     | '/study-plan'
     | '/verify'
     | '/communities/$slug'
@@ -342,6 +353,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/leaderboard'
     | '/_authenticated/onboarding'
+    | '/_authenticated/settings'
     | '/_authenticated/study-plan'
     | '/_authenticated/verify'
     | '/_authenticated/communities/$slug'
@@ -454,6 +466,13 @@ declare module '@tanstack/react-router' {
       path: '/study-plan'
       fullPath: '/study-plan'
       preLoaderRoute: typeof AuthenticatedStudyPlanRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/onboarding': {
@@ -569,6 +588,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedLeaderboardRoute: typeof AuthenticatedLeaderboardRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedStudyPlanRoute: typeof AuthenticatedStudyPlanRoute
   AuthenticatedVerifyRoute: typeof AuthenticatedVerifyRoute
   AuthenticatedCommunitiesSlugRoute: typeof AuthenticatedCommunitiesSlugRoute
@@ -589,6 +609,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedLeaderboardRoute: AuthenticatedLeaderboardRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedStudyPlanRoute: AuthenticatedStudyPlanRoute,
   AuthenticatedVerifyRoute: AuthenticatedVerifyRoute,
   AuthenticatedCommunitiesSlugRoute: AuthenticatedCommunitiesSlugRoute,
