@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { Tldraw, type Editor, type TLStoreSnapshot, loadSnapshot, getSnapshot } from "tldraw";
 import "tldraw/tldraw.css";
 import { Loader2, Download, Share2, Check } from "lucide-react";
@@ -9,48 +9,49 @@ import { toast } from "sonner";
 /**
  * Shared whiteboard for a session.
  *
- * Sync is intentionally *manual*: pushing remote snapshots into a live tldraw
- * store while someone is drawing or panning resets their camera and wipes
- * in-flight strokes, which made the board feel blank and jumpy. Instead we
- * load once on mount, autosave your own work quietly, and let people publish
- * ("Share board") or pull ("Get latest") when they actually want to.
+ * Two things used to make the board go blank mid-stroke:
+ *  1. React state updates while drawing re-rendered the parent and could tear
+ *     down the tldraw canvas. All drawing-time bookkeeping now lives in refs,
+ *     and the component is memoised so room re-renders never reach it.
+ *  2. No local persistence, so any remount started from an empty store.
+ *     `persistenceKey` keeps your work in the browser between mounts.
+ *
+ * Remote sync stays manual: publish with "Share board", pull with "Get latest".
  */
-export function Whiteboard({
-  sessionId,
-  userId,
-}: {
-  sessionId: string;
-  userId: string;
-}) {
+function WhiteboardImpl({ sessionId, userId }: { sessionId: string; userId: string }) {
   const editorRef = useRef<Editor | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sessionRef = useRef(sessionId);
+  const userRef = useRef(userId);
+  sessionRef.current = sessionId;
+  userRef.current = userId;
+
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [remoteUpdate, setRemoteUpdate] = useState(false);
 
-  const persist = useCallback(
-    async (announce: boolean) => {
-      const editor = editorRef.current;
-      if (!editor) return;
-      setSaving(true);
-      const snap = getSnapshot(editor.store);
-      const { error } = await supabase.from("session_whiteboards").upsert({
-        session_id: sessionId,
-        snapshot: snap as unknown as never,
-        updated_by: userId,
-        updated_at: new Date().toISOString(),
-      });
-      setSaving(false);
-      if (error) {
-        if (announce) toast.error(error.message);
-        return;
-      }
+  const persist = useCallback(async (announce: boolean) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    if (announce) setSaving(true);
+    const snap = getSnapshot(editor.store);
+    const { error } = await supabase.from("session_whiteboards").upsert({
+      session_id: sessionRef.current,
+      snapshot: snap as unknown as never,
+      updated_by: userRef.current,
+      updated_at: new Date().toISOString(),
+    });
+    if (announce) setSaving(false);
+    if (error) {
+      if (announce) toast.error(error.message);
+      return;
+    }
+    if (announce) {
       setSavedAt(Date.now());
-      if (announce) toast.success("Board shared with the room");
-    },
-    [sessionId, userId],
-  );
+      toast.success("Board shared with the room");
+    }
+  }, []);
 
   const pull = useCallback(async () => {
     const editor = editorRef.current;
@@ -58,7 +59,7 @@ export function Whiteboard({
     const { data } = await supabase
       .from("session_whiteboards")
       .select("snapshot")
-      .eq("session_id", sessionId)
+      .eq("session_id", sessionRef.current)
       .maybeSingle();
     const snap = data?.snapshot;
     if (!snap || typeof snap !== "object" || Object.keys(snap as object).length === 0) {
@@ -73,34 +74,47 @@ export function Whiteboard({
       console.warn("whiteboard snapshot load failed", e);
       toast.error("Couldn't load that board");
     }
-  }, [sessionId]);
+  }, []);
 
+  // Stable across renders: tldraw never sees a new onMount, so it never remounts.
   const handleMount = useCallback(
     (editor: Editor) => {
       editorRef.current = editor;
 
       (async () => {
-        const { data } = await supabase
-          .from("session_whiteboards")
-          .select("snapshot")
-          .eq("session_id", sessionId)
-          .maybeSingle();
-        const snap = data?.snapshot;
-        if (snap && typeof snap === "object" && Object.keys(snap as object).length > 0) {
-          try {
-            loadSnapshot(editor.store, snap as unknown as TLStoreSnapshot);
-          } catch (e) {
-            console.warn("whiteboard initial load failed", e);
+        // Only seed from the server when the local board is still empty, so a
+        // remount mid-session never wipes what you just drew.
+        const hasLocal = editor.getCurrentPageShapeIds().size > 0;
+        if (!hasLocal) {
+          const { data } = await supabase
+            .from("session_whiteboards")
+            .select("snapshot")
+            .eq("session_id", sessionRef.current)
+            .maybeSingle();
+          const snap = data?.snapshot;
+          if (
+            snap &&
+            typeof snap === "object" &&
+            Object.keys(snap as object).length > 0 &&
+            editor.getCurrentPageShapeIds().size === 0
+          ) {
+            try {
+              loadSnapshot(editor.store, snap as unknown as TLStoreSnapshot);
+            } catch (e) {
+              console.warn("whiteboard initial load failed", e);
+            }
           }
         }
         setLoaded(true);
       })();
 
-      // Quiet autosave of your own drawing, debounced so strokes aren't interrupted.
+      // Quiet autosave, debounced and state-free so strokes aren't interrupted.
       const unlisten = editor.store.listen(
         () => {
           if (saveTimer.current) clearTimeout(saveTimer.current);
-          saveTimer.current = setTimeout(() => { void persist(false); }, 1500);
+          saveTimer.current = setTimeout(() => {
+            void persist(false);
+          }, 2000);
         },
         { source: "user", scope: "document" },
       );
@@ -110,7 +124,7 @@ export function Whiteboard({
         if (saveTimer.current) clearTimeout(saveTimer.current);
       };
     },
-    [sessionId, persist],
+    [persist],
   );
 
   // Only *notify* about remote changes — never force them into the live canvas.
@@ -159,8 +173,10 @@ export function Whiteboard({
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         )}
-        <Tldraw onMount={handleMount} />
+        <Tldraw persistenceKey={`learnova-wb-${sessionId}`} onMount={handleMount} />
       </div>
     </div>
   );
 }
+
+export const Whiteboard = memo(WhiteboardImpl);
