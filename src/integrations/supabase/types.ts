@@ -1553,37 +1553,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
-      is_community_member: {
-        Args: { _community_id: string; _user_id: string }
-        Returns: boolean
-      }
-      is_community_mod: {
-        Args: { _community_id: string; _user_id: string }
-        Returns: boolean
-      }
-      is_course_host: {
-        Args: { _course_id: string; _user_id: string }
-        Returns: boolean
-      }
-      is_session_participant: {
-        Args: { _session_id: string; _user_id: string }
-        Returns: boolean
-      }
-      is_session_tutor: {
-        Args: { _session_id: string; _user_id: string }
-        Returns: boolean
-      }
-      is_verified_for: {
-        Args: { _subject: string; _user_id: string }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
       app_role: "admin" | "moderator" | "tutor" | "learner"
