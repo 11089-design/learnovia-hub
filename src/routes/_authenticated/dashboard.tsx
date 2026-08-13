@@ -92,6 +92,23 @@ function DashboardPage() {
       setSessionsAttended((parts ?? []).length);
       setLatestPlan(plan ?? null);
 
+      // One-hour heads-up for anything starting soon (once per session, per device)
+      const soon = [
+        ...(ups ?? []).map((r) => r.session as UpcomingSession),
+        ...((host ?? []) as UpcomingSession[]),
+      ].filter((s) => s && isReminderDue(s));
+      for (const s of soon) {
+        const key = `learnova:reminded:${s.id}`;
+        if (localStorage.getItem(key)) continue;
+        localStorage.setItem(key, "1");
+        toast.info(`Starting soon: ${s.title}`, {
+          description: s.starts_at ? `Begins ${format(new Date(s.starts_at), "h:mm a")} — the room opens 10 minutes before.` : undefined,
+          duration: 10000,
+        });
+      }
+
+
+
       // Bump streak (best-effort)
       const today = new Date().toISOString().slice(0, 10);
       await supabase.from("streaks").upsert(
