@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Loader2 } from "lucide-react";
+import { Clock, Loader2 } from "lucide-react";
+import { formatDistanceToNow, format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { SessionRoom } from "@/components/sessions/SessionRoom";
 import { WaitingRoomStandby } from "@/components/sessions/WaitingRoomPanel";
+import { canEnterRoom } from "@/lib/session-time";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/_authenticated/sessions/$sessionId/room")({
   head: () => ({ meta: [{ title: "Live session — Learnova" }] }),
