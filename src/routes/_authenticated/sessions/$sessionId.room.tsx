@@ -115,6 +115,29 @@ function SessionRoomPage() {
     );
   }
 
+  if (tooEarly) {
+    return (
+      <div className="grid min-h-screen place-items-center px-4 text-center">
+        <div className="glass max-w-md rounded-3xl p-8">
+          <Clock className="mx-auto h-8 w-8 text-primary" />
+          <h1 className="mt-4 text-2xl font-bold">Not open yet</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {session.starts_at
+              ? `“${session.title}” starts ${formatDistanceToNow(new Date(session.starts_at), { addSuffix: true })} (${format(new Date(session.starts_at), "EEE, MMM d • h:mm a")}). The room opens 10 minutes before, and you'll get a reminder an hour ahead.`
+              : "The host hasn't opened this room yet."}
+          </p>
+          <div className="mt-5 flex justify-center gap-2">
+            <Button variant="outline" className="rounded-full" onClick={() => navigate({ to: "/sessions/$sessionId", params: { sessionId } })}>
+              Back to session
+            </Button>
+            <Link to="/dashboard"><Button className="rounded-full">Dashboard</Button></Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+
   if (needsWaiting) {
     return (
       <WaitingRoomStandby
