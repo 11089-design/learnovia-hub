@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { isSessionOver } from "@/lib/session-time";
+import { isSessionOver, canEnterRoom } from "@/lib/session-time";
 
 export const Route = createFileRoute("/_authenticated/sessions/$sessionId/")({
   head: () => ({ meta: [{ title: "Session — Learnova" }] }),
@@ -91,6 +91,8 @@ function SessionDetailPage() {
 
   const isTutor = !!userId && !!session && session.tutor_id === userId;
   const isOver = !!session && isSessionOver(session);
+  const roomOpen = !!session && canEnterRoom(session);
+
   const canChat = enrolled || isTutor;
 
   const enroll = async () => {
@@ -284,13 +286,20 @@ function SessionDetailPage() {
                     <div className="rounded-2xl border border-border/60 bg-muted/40 p-3 text-center text-xs text-muted-foreground">
                       This session has ended.
                     </div>
-                  ) : (
+                  ) : roomOpen ? (
                     <Link to="/sessions/$sessionId/room" params={{ sessionId: session.id }}>
                       <Button className="w-full rounded-full bg-brand-gradient text-white">
                         <Video className="mr-1 h-4 w-4" /> Join live room
                       </Button>
                     </Link>
+                  ) : (
+                    <div className="rounded-2xl border border-border/60 bg-muted/40 p-3 text-center text-xs text-muted-foreground">
+                      <Clock className="mx-auto mb-1 h-4 w-4" />
+                      The room opens 10 minutes before the start
+                      {session.starts_at ? ` (${format(new Date(session.starts_at), "h:mm a")})` : ""}. We'll remind you an hour before.
+                    </div>
                   )}
+
                   <Button variant="outline" className="w-full rounded-full" onClick={() => setTab("chat")}>
                     <MessageSquare className="mr-1 h-4 w-4" /> Open group chat
                   </Button>

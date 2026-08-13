@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Loader2 } from "lucide-react";
+import { Clock, Loader2 } from "lucide-react";
+import { formatDistanceToNow, format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { SessionRoom } from "@/components/sessions/SessionRoom";
 import { WaitingRoomStandby } from "@/components/sessions/WaitingRoomPanel";
+import { canEnterRoom } from "@/lib/session-time";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/_authenticated/sessions/$sessionId/room")({
   head: () => ({ meta: [{ title: "Live session — Learnova" }] }),
@@ -34,6 +37,8 @@ function SessionRoomPage() {
   const [loading, setLoading] = useState(true);
   const [denied, setDenied] = useState<string | null>(null);
   const [needsWaiting, setNeedsWaiting] = useState(false);
+  const [tooEarly, setTooEarly] = useState(false);
+
 
   useEffect(() => {
     (async () => {
@@ -55,6 +60,8 @@ function SessionRoomPage() {
       setDisplayName(p?.display_name ?? "Anonymous");
 
       if (s.tutor_id !== u.user.id) {
+        if (!canEnterRoom(s)) { setTooEarly(true); setLoading(false); return; }
+
         const { data: part } = await supabase
           .from("session_participants")
           .select("id")
@@ -107,6 +114,29 @@ function SessionRoomPage() {
       </div>
     );
   }
+
+  if (tooEarly) {
+    return (
+      <div className="grid min-h-screen place-items-center px-4 text-center">
+        <div className="glass max-w-md rounded-3xl p-8">
+          <Clock className="mx-auto h-8 w-8 text-primary" />
+          <h1 className="mt-4 text-2xl font-bold">Not open yet</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {session.starts_at
+              ? `“${session.title}” starts ${formatDistanceToNow(new Date(session.starts_at), { addSuffix: true })} (${format(new Date(session.starts_at), "EEE, MMM d • h:mm a")}). The room opens 10 minutes before, and you'll get a reminder an hour ahead.`
+              : "The host hasn't opened this room yet."}
+          </p>
+          <div className="mt-5 flex justify-center gap-2">
+            <Button variant="outline" className="rounded-full" onClick={() => navigate({ to: "/sessions/$sessionId", params: { sessionId } })}>
+              Back to session
+            </Button>
+            <Link to="/dashboard"><Button className="rounded-full">Dashboard</Button></Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
 
   if (needsWaiting) {
     return (

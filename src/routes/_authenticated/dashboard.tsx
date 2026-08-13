@@ -5,7 +5,9 @@ import {
   Trophy, Wand2, Star, TrendingUp, GraduationCap, ArrowRight,
 } from "lucide-react";
 import { TrophyMascot } from "@/components/LearnovaMascots";
-import { isSessionOver } from "@/lib/session-time";
+import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { isSessionOver, isReminderDue } from "@/lib/session-time";
+
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -90,6 +92,23 @@ function DashboardPage() {
       setSessionsAttended((parts ?? []).length);
       setLatestPlan(plan ?? null);
 
+      // One-hour heads-up for anything starting soon (once per session, per device)
+      const soon = [
+        ...(ups ?? []).map((r) => r.session as UpcomingSession),
+        ...((host ?? []) as UpcomingSession[]),
+      ].filter((s) => s && isReminderDue(s));
+      for (const s of soon) {
+        const key = `learnova:reminded:${s.id}`;
+        if (localStorage.getItem(key)) continue;
+        localStorage.setItem(key, "1");
+        toast.info(`Starting soon: ${s.title}`, {
+          description: s.starts_at ? `Begins ${format(new Date(s.starts_at), "h:mm a")} — the room opens 10 minutes before.` : undefined,
+          duration: 10000,
+        });
+      }
+
+
+
       // Bump streak (best-effort)
       const today = new Date().toISOString().slice(0, 10);
       await supabase.from("streaks").upsert(
@@ -128,31 +147,15 @@ function DashboardPage() {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 border-b border-border/50 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3">
-          <Link to="/" className="flex items-center gap-2">
+        <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-2.5">
+          <Link to="/dashboard" className="flex shrink-0 items-center gap-2">
             <div className="grid h-9 w-9 place-items-center rounded-xl bg-brand-gradient text-white shadow-soft">
               <Sparkles className="h-5 w-5" />
             </div>
             <span className="text-lg font-bold tracking-tight">Learn<span className="gradient-text">ova</span></span>
           </Link>
-          <nav className="hidden items-center gap-1 lg:flex">
-            <Link to="/explore"><Button variant="ghost" size="sm"><Compass className="mr-1 h-4 w-4" /> Explore</Button></Link>
-            <Link to="/communities"><Button variant="ghost" size="sm"><Users className="mr-1 h-4 w-4" /> Communities</Button></Link>
-            <Link to="/messages"><Button variant="ghost" size="sm"><MessageSquare className="mr-1 h-4 w-4" /> Messages</Button></Link>
-            <Link to="/leaderboard"><Button variant="ghost" size="sm"><Trophy className="mr-1 h-4 w-4" /> Leaderboard</Button></Link>
-            {!isTutor && <Link to="/study-plan"><Button variant="ghost" size="sm"><Wand2 className="mr-1 h-4 w-4" /> Study plan</Button></Link>}
-            {isAdmin && <Link to="/admin"><Button variant="ghost" size="sm"><Shield className="mr-1 h-4 w-4" /> Admin</Button></Link>}
-          </nav>
-          <div className="flex items-center gap-1">
-            <Link to="/settings"><Button variant="ghost" size="sm" className="rounded-full"><LifeBuoy className="mr-1 h-4 w-4" /> Help</Button></Link>
-            <Button variant="ghost" size="sm" onClick={handleSignOut} className="rounded-full">
-              <LogOut className="mr-2 h-4 w-4" /> <span className="hidden sm:inline">Sign out</span>
-            </Button>
-          </div>
-        </div>
-        {/* Always-visible section nav — Explore and friends never hide behind the landing page */}
-        <div className="border-t border-border/40">
-          <div className="mx-auto flex max-w-7xl items-center gap-1 overflow-x-auto px-3 py-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+
+          <nav className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {([
               { to: "/explore", label: "Explore" },
               { to: "/training", label: "Training" },
@@ -161,8 +164,10 @@ function DashboardPage() {
               { to: "/communities", label: "Communities" },
               { to: "/messages", label: "Messages" },
               { to: "/leaderboard", label: "Leaderboard" },
+              ...(!isTutor ? [{ to: "/study-plan", label: "Study plan" } as const] : []),
               { to: "/safety", label: "Safety" },
               { to: "/guide", label: "Guide" },
+              ...(isAdmin ? [{ to: "/admin", label: "Admin" } as const] : []),
             ] as const).map((l) => (
               <Link
                 key={l.to}
@@ -173,9 +178,18 @@ function DashboardPage() {
                 {l.label}
               </Link>
             ))}
+          </nav>
+
+          <div className="flex shrink-0 items-center gap-1">
+            <ThemeSwitcher />
+            <Link to="/settings"><Button variant="ghost" size="sm" className="rounded-full"><LifeBuoy className="mr-1 h-4 w-4" /> Help</Button></Link>
+            <Button variant="ghost" size="sm" onClick={handleSignOut} className="rounded-full">
+              <LogOut className="mr-2 h-4 w-4" /> <span className="hidden sm:inline">Sign out</span>
+            </Button>
           </div>
         </div>
       </header>
+
 
       <main className="mx-auto max-w-7xl px-4 py-8">
         {/* Hero */}

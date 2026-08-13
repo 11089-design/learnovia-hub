@@ -1,11 +1,53 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, BookOpen, HelpCircle, LifeBuoy, RotateCcw, Sparkles } from "lucide-react";
+import { ArrowLeft, BookOpen, Check, HelpCircle, LifeBuoy, Palette, RotateCcw, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { CLASSROOM_TOOLS, FAQS, ROOM_GUIDE_SEEN_KEY } from "@/lib/guide-content";
 import { RoomWelcomeDialog } from "@/components/sessions/RoomWelcomeDialog";
+import { THEMES, applyTheme } from "@/components/ThemeSwitcher";
+
+const THEME_KEY = "learnova-theme";
+
+function ThemePicker() {
+  const [theme, setTheme] = useState<string>("lavender");
+
+  useEffect(() => {
+    setTheme(localStorage.getItem(THEME_KEY) ?? "lavender");
+  }, []);
+
+  const pick = (id: string) => {
+    setTheme(id);
+    localStorage.setItem(THEME_KEY, id);
+    applyTheme(id);
+  };
+
+  return (
+    <section className="glass rounded-3xl p-6 md:p-8">
+      <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+        <Palette className="h-3.5 w-3.5" /> Appearance
+      </span>
+      <h2 className="mt-4 text-2xl font-bold tracking-tight">Theme</h2>
+      <p className="mt-2 text-sm text-muted-foreground">Each theme brings its own colours and typography. It sticks on this device.</p>
+      <div className="mt-5 grid gap-3 sm:grid-cols-3">
+        {THEMES.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => pick(t.id)}
+            className={`flex items-center gap-3 rounded-2xl border p-4 text-left transition ${theme === t.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}
+          >
+            <span className="h-8 w-8 shrink-0 rounded-full" style={{ background: t.swatch }} />
+            <span className="flex-1 text-sm font-semibold">{t.label}</span>
+            {theme === t.id && <Check className="h-4 w-4 text-primary" />}
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -47,7 +89,10 @@ function SettingsPage() {
       </header>
 
       <main className="mx-auto max-w-5xl px-4 py-8">
-        <section className="glass rounded-3xl p-6 md:p-8">
+        <ThemePicker />
+
+        <section className="glass mt-6 rounded-3xl p-6 md:p-8">
+
           <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
             <Sparkles className="h-3.5 w-3.5" /> Welcome guide
           </span>

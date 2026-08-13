@@ -1177,40 +1177,52 @@ function SummaryPanel({ sessionId, isTutor }: { sessionId: string; isTutor: bool
 function ReactionsBar({ sessionId, userId }: { sessionId: string; userId: string }) {
   const [recent, setRecent] = useState<{ id: string; emoji: string }[]>([]);
 
+  const show = (id: string, emoji: string) => {
+    setRecent((cur) => (cur.some((x) => x.id === id) ? cur : [...cur, { id, emoji }]));
+    setTimeout(() => setRecent((cur) => cur.filter((x) => x.id !== id)), 2500);
+  };
+
   useEffect(() => {
     const ch = supabase
       .channel(`reactions-${sessionId}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "session_reactions", filter: `session_id=eq.${sessionId}` }, (payload) => {
-        const r = payload.new as { id: string; emoji: string };
-        setRecent((cur) => [...cur, r]);
-        setTimeout(() => setRecent((cur) => cur.filter((x) => x.id !== r.id)), 2500);
+        const r = payload.new as { id: string; emoji: string; user_id: string };
+        if (r.user_id === userId) return; // already shown optimistically
+        show(r.id, r.emoji);
       })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [sessionId]);
+  }, [sessionId, userId]);
 
-  const react = (emoji: string) => {
-    supabase.from("session_reactions").insert({ session_id: sessionId, user_id: userId, emoji });
+  const react = async (emoji: string) => {
+    show(`local-${Date.now()}-${emoji}`, emoji);
+    const { error } = await supabase.from("session_reactions").insert({ session_id: sessionId, user_id: userId, emoji });
+    if (error) toast.error("Couldn't send that reaction — " + error.message);
   };
 
   return (
-    <>
+    <div className="pointer-events-none fixed bottom-4 right-4 z-20 flex flex-col items-end gap-2">
       {/* Floating reactions */}
-      <div className="pointer-events-none fixed bottom-24 left-1/2 z-30 -translate-x-1/2">
-        <div className="flex gap-1">
-          {recent.map((r) => (
-            <span key={r.id} className="animate-bounce text-2xl">{r.emoji}</span>
-          ))}
-        </div>
+      <div className="flex h-8 items-end gap-1">
+        {recent.map((r) => (
+          <span key={r.id} className="animate-bounce text-2xl">{r.emoji}</span>
+        ))}
       </div>
       {/* Reaction bar */}
-      <div className="fixed bottom-4 left-1/2 z-30 flex -translate-x-1/2 gap-1 rounded-full border border-border bg-background/90 p-1.5 shadow-soft backdrop-blur">
+      <div className="pointer-events-auto flex gap-1 rounded-full border border-border bg-background/95 p-1.5 shadow-soft backdrop-blur">
         {REACTIONS.map((e) => (
-          <button key={e} onClick={() => react(e)} className="rounded-full px-2 py-1 text-lg hover:bg-accent">
+          <button
+            key={e}
+            type="button"
+            onClick={() => react(e)}
+            aria-label={`React ${e}`}
+            className="rounded-full px-1.5 py-0.5 text-lg transition hover:bg-accent"
+          >
             {e}
           </button>
         ))}
       </div>
-    </>
+    </div>
   );
 }
+
