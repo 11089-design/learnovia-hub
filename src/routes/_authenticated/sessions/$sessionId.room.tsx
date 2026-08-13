@@ -58,6 +58,8 @@ function SessionRoomPage() {
       setDisplayName(p?.display_name ?? "Anonymous");
 
       if (s.tutor_id !== u.user.id) {
+        if (!canEnterRoom(s)) { setTooEarly(true); setLoading(false); return; }
+
         const { data: part } = await supabase
           .from("session_participants")
           .select("id")
