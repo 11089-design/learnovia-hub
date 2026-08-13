@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { isSessionOver } from "@/lib/session-time";
+import { isSessionOver, canEnterRoom } from "@/lib/session-time";
 
 export const Route = createFileRoute("/_authenticated/sessions/$sessionId/")({
   head: () => ({ meta: [{ title: "Session — Learnova" }] }),
@@ -91,6 +91,8 @@ function SessionDetailPage() {
 
   const isTutor = !!userId && !!session && session.tutor_id === userId;
   const isOver = !!session && isSessionOver(session);
+  const roomOpen = !!session && canEnterRoom(session);
+
   const canChat = enrolled || isTutor;
 
   const enroll = async () => {
