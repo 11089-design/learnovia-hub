@@ -47,7 +47,10 @@ function SettingsPage() {
       </header>
 
       <main className="mx-auto max-w-5xl px-4 py-8">
-        <section className="glass rounded-3xl p-6 md:p-8">
+        <ThemePicker />
+
+        <section className="glass mt-6 rounded-3xl p-6 md:p-8">
+
           <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
             <Sparkles className="h-3.5 w-3.5" /> Welcome guide
           </span>

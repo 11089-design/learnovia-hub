@@ -5,7 +5,9 @@ import {
   Trophy, Wand2, Star, TrendingUp, GraduationCap, ArrowRight,
 } from "lucide-react";
 import { TrophyMascot } from "@/components/LearnovaMascots";
-import { isSessionOver } from "@/lib/session-time";
+import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { isSessionOver, isReminderDue } from "@/lib/session-time";
+
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
