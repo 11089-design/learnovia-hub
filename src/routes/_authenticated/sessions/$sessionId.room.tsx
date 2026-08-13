@@ -37,6 +37,8 @@ function SessionRoomPage() {
   const [loading, setLoading] = useState(true);
   const [denied, setDenied] = useState<string | null>(null);
   const [needsWaiting, setNeedsWaiting] = useState(false);
+  const [tooEarly, setTooEarly] = useState(false);
+
 
   useEffect(() => {
     (async () => {
