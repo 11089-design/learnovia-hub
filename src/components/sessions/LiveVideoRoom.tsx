@@ -150,12 +150,22 @@ function RoomControls({ onLeave }: { onLeave?: () => void }) {
   const toggleShare = async () => {
     if (!localParticipant) return;
     const next = !sharing;
+    if (next && typeof navigator !== "undefined" && !navigator.mediaDevices?.getDisplayMedia) {
+      toast.error("Your browser can't share a screen here. Use desktop Chrome, Edge or Safari — screen sharing isn't available on most mobile browsers.");
+      return;
+    }
     try {
       await localParticipant.setScreenShareEnabled(next, { audio: true });
       setSharing(next);
+      if (next) toast.success("You're sharing your screen");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Screen share failed";
-      if (!/permission|denied|abort/i.test(msg)) toast.error(msg);
+      if (/permission|denied|abort|NotAllowed/i.test(msg)) {
+        toast.info("Screen share cancelled — allow screen recording for your browser to share.");
+      } else {
+        toast.error(msg);
+      }
+      setSharing(localParticipant.isScreenShareEnabled);
     }
   };
 
@@ -183,13 +193,14 @@ function RoomControls({ onLeave }: { onLeave?: () => void }) {
       </Button>
       <Button
         size="sm"
-        variant={sharing ? "default" : "outline"}
-        className={`rounded-full ${sharing ? "bg-brand-gradient text-white" : ""}`}
+        variant="outline"
+        className={`rounded-full ${sharing ? "border-transparent bg-primary text-primary-foreground hover:bg-primary/90" : "bg-background text-foreground"}`}
         onClick={toggleShare}
       >
         {sharing ? <MonitorX className="mr-1 h-3.5 w-3.5" /> : <MonitorUp className="mr-1 h-3.5 w-3.5" />}
         {sharing ? "Stop sharing" : "Share screen"}
       </Button>
+
       <Button size="sm" variant="destructive" className="ml-auto rounded-full" onClick={leave} disabled={leaving}>
         {leaving ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <PhoneOff className="mr-1 h-3.5 w-3.5" />}
         Leave
