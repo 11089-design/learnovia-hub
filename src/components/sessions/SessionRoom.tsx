@@ -331,9 +331,20 @@ export function SessionRoom({
               <TabsTrigger value="breakouts" className="rounded-full" title="Breakouts"><DoorOpen className="h-4 w-4" /></TabsTrigger>
             </TabsList>
 
-            <TabsContent value="video" className="flex-1 px-4 pb-4">
-              <SummaryPanel sessionId={session.id} isTutor={isTutor} />
+            <TabsContent value="video" className="flex flex-1 flex-col gap-3 overflow-hidden px-4 pb-4">
+              <div className="min-h-[180px] flex-1 overflow-hidden">
+                <LiveCaptions
+                  sessionId={session.id}
+                  userId={currentUserId}
+                  displayName={effectiveDisplayName}
+                  startedAt={extras.started_at}
+                />
+              </div>
+              <div className="min-h-[200px] flex-1 overflow-hidden">
+                <SummaryPanel sessionId={session.id} isTutor={isTutor} />
+              </div>
             </TabsContent>
+
             <TabsContent value="chat" className="flex-1 overflow-hidden px-1 pb-3">
               <ChatPanel sessionId={session.id} userId={currentUserId} isTutor={isTutor} />
             </TabsContent>
