@@ -23,6 +23,8 @@ import { Switch } from "@/components/ui/switch";
 import { LiveVideoRoom } from "./LiveVideoRoom";
 import { ExitReflection } from "./ExitReflection";
 import { Whiteboard } from "./Whiteboard";
+import { LiveCaptions } from "./LiveCaptions";
+
 import { AgendaBar, type AgendaItem } from "./AgendaBar";
 import { WaitingRoomPanel } from "./WaitingRoomPanel";
 import { BreakoutsPanel } from "./BreakoutsPanel";
