@@ -5,7 +5,7 @@ import {
   Trophy, Wand2, Star, TrendingUp, GraduationCap, ArrowRight,
 } from "lucide-react";
 import { TrophyMascot } from "@/components/LearnovaMascots";
-import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { SiteHeader } from "@/components/SiteHeader";
 import { isSessionOver, isReminderDue } from "@/lib/session-time";
 
 import { format } from "date-fns";
@@ -127,14 +127,6 @@ function DashboardPage() {
       });
     })();
   }, [navigate]);
-
-  const handleSignOut = async () => {
-    await queryClient.cancelQueries();
-    queryClient.clear();
-    await supabase.auth.signOut();
-    toast.success("Signed out");
-    navigate({ to: "/auth", replace: true });
-  };
 
   const trustProgress = useMemo(() => (profile ? Math.min((profile.free_sessions_taught / 5) * 100, 100) : 0), [profile]);
 
