@@ -1214,7 +1214,7 @@ function ReactionsBar({ sessionId, userId }: { sessionId: string; userId: string
   };
 
   return (
-    <div className="pointer-events-none fixed bottom-4 right-4 z-20 flex flex-col items-end gap-2">
+    <div className="pointer-events-none fixed bottom-4 right-4 z-50 flex flex-col items-end gap-2">
       {/* Floating reactions */}
       <div className="flex h-8 items-end gap-1">
         {recent.map((r) => (
