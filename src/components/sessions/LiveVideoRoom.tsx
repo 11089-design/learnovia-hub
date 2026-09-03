@@ -147,11 +147,28 @@ function RoomControls({ onLeave }: { onLeave?: () => void }) {
     setCamOn(next);
   };
 
+  /** True when the page is embedded and the embed doesn't allow display-capture. */
+  const shareBlockedByEmbed = () => {
+    if (typeof window === "undefined") return false;
+    const embedded = window.self !== window.top;
+    if (!embedded) return false;
+    const fp = (document as unknown as { featurePolicy?: { allowsFeature: (f: string) => boolean } }).featurePolicy;
+    if (fp?.allowsFeature) return !fp.allowsFeature("display-capture");
+    return true; // can't prove it's allowed while embedded
+  };
+
   const toggleShare = async () => {
     if (!localParticipant) return;
     const next = !sharing;
     if (next && typeof navigator !== "undefined" && !navigator.mediaDevices?.getDisplayMedia) {
-      toast.error("Your browser can't share a screen here. Use desktop Chrome, Edge or Safari — screen sharing isn't available on most mobile browsers.");
+      toast.error("This browser can't share a screen. Use desktop Chrome, Edge or Safari — mobile browsers don't support it.");
+      return;
+    }
+    if (next && shareBlockedByEmbed()) {
+      toast.error("Screen sharing is blocked inside this embedded preview. Open the room in its own tab, then share.", {
+        action: { label: "Open in new tab", onClick: () => window.open(window.location.href, "_blank", "noopener") },
+        duration: 8000,
+      });
       return;
     }
     try {
@@ -160,14 +177,20 @@ function RoomControls({ onLeave }: { onLeave?: () => void }) {
       if (next) toast.success("You're sharing your screen");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Screen share failed";
-      if (/permission|denied|abort|NotAllowed/i.test(msg)) {
-        toast.info("Screen share cancelled — allow screen recording for your browser to share.");
+      if (/permission|denied|disallowed|NotAllowed/i.test(msg)) {
+        toast.error("Your browser blocked the screen picker. If you're in the embedded preview, open the room in its own tab.", {
+          action: { label: "Open in new tab", onClick: () => window.open(window.location.href, "_blank", "noopener") },
+          duration: 8000,
+        });
+      } else if (/abort/i.test(msg)) {
+        toast.info("Screen share cancelled.");
       } else {
         toast.error(msg);
       }
       setSharing(localParticipant.isScreenShareEnabled);
     }
   };
+
 
   const leave = async () => {
     setLeaving(true);
