@@ -146,49 +146,8 @@ function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-40 border-b border-border/50 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-2.5">
-          <Link to="/dashboard" className="flex shrink-0 items-center gap-2">
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-brand-gradient text-white shadow-soft">
-              <Sparkles className="h-5 w-5" />
-            </div>
-            <span className="text-lg font-bold tracking-tight">Learn<span className="gradient-text">ova</span></span>
-          </Link>
+      <SiteHeader variant="app" />
 
-          <nav className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {([
-              { to: "/explore", label: "Explore" },
-              { to: "/training", label: "Training" },
-              { to: "/workshops", label: "Workshops" },
-              { to: "/kids", label: "Kids" },
-              { to: "/communities", label: "Communities" },
-              { to: "/messages", label: "Messages" },
-              { to: "/leaderboard", label: "Leaderboard" },
-              ...(!isTutor ? [{ to: "/study-plan", label: "Study plan" } as const] : []),
-              { to: "/safety", label: "Safety" },
-              { to: "/guide", label: "Guide" },
-              ...(isAdmin ? [{ to: "/admin", label: "Admin" } as const] : []),
-            ] as const).map((l) => (
-              <Link
-                key={l.to}
-                to={l.to}
-                activeProps={{ className: "bg-primary/10 text-foreground" }}
-                className="shrink-0 rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground"
-              >
-                {l.label}
-              </Link>
-            ))}
-          </nav>
-
-          <div className="flex shrink-0 items-center gap-1">
-            <ThemeSwitcher />
-            <Link to="/settings"><Button variant="ghost" size="sm" className="rounded-full"><LifeBuoy className="mr-1 h-4 w-4" /> Help</Button></Link>
-            <Button variant="ghost" size="sm" onClick={handleSignOut} className="rounded-full">
-              <LogOut className="mr-2 h-4 w-4" /> <span className="hidden sm:inline">Sign out</span>
-            </Button>
-          </div>
-        </div>
-      </header>
 
 
       <main className="mx-auto max-w-7xl px-4 py-8">
