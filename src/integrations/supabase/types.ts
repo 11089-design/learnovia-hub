@@ -725,6 +725,7 @@ export type Database = {
           headline: string | null
           id: string
           interests: string[]
+          kids_mode: boolean
           onboarded: boolean
           parent_consent: boolean
           role: Database["public"]["Enums"]["user_role"]
@@ -747,6 +748,7 @@ export type Database = {
           headline?: string | null
           id: string
           interests?: string[]
+          kids_mode?: boolean
           onboarded?: boolean
           parent_consent?: boolean
           role?: Database["public"]["Enums"]["user_role"]
@@ -769,6 +771,7 @@ export type Database = {
           headline?: string | null
           id?: string
           interests?: string[]
+          kids_mode?: boolean
           onboarded?: boolean
           parent_consent?: boolean
           role?: Database["public"]["Enums"]["user_role"]
@@ -1221,6 +1224,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "session_resources_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_transcripts: {
+        Row: {
+          at_seconds: number
+          content: string
+          created_at: string
+          id: string
+          session_id: string
+          speaker_name: string
+          user_id: string
+        }
+        Insert: {
+          at_seconds?: number
+          content: string
+          created_at?: string
+          id?: string
+          session_id: string
+          speaker_name?: string
+          user_id: string
+        }
+        Update: {
+          at_seconds?: number
+          content?: string
+          created_at?: string
+          id?: string
+          session_id?: string
+          speaker_name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_transcripts_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "sessions"
