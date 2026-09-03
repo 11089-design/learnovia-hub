@@ -23,6 +23,8 @@ import { Switch } from "@/components/ui/switch";
 import { LiveVideoRoom } from "./LiveVideoRoom";
 import { ExitReflection } from "./ExitReflection";
 import { Whiteboard } from "./Whiteboard";
+import { LiveCaptions } from "./LiveCaptions";
+
 import { AgendaBar, type AgendaItem } from "./AgendaBar";
 import { WaitingRoomPanel } from "./WaitingRoomPanel";
 import { BreakoutsPanel } from "./BreakoutsPanel";
@@ -331,9 +333,20 @@ export function SessionRoom({
               <TabsTrigger value="breakouts" className="rounded-full" title="Breakouts"><DoorOpen className="h-4 w-4" /></TabsTrigger>
             </TabsList>
 
-            <TabsContent value="video" className="flex-1 px-4 pb-4">
-              <SummaryPanel sessionId={session.id} isTutor={isTutor} />
+            <TabsContent value="video" className="flex flex-1 flex-col gap-3 overflow-hidden px-4 pb-4">
+              <div className="min-h-[180px] flex-1 overflow-hidden">
+                <LiveCaptions
+                  sessionId={session.id}
+                  userId={currentUserId}
+                  displayName={effectiveDisplayName}
+                  startedAt={extras.started_at}
+                />
+              </div>
+              <div className="min-h-[200px] flex-1 overflow-hidden">
+                <SummaryPanel sessionId={session.id} isTutor={isTutor} />
+              </div>
             </TabsContent>
+
             <TabsContent value="chat" className="flex-1 overflow-hidden px-1 pb-3">
               <ChatPanel sessionId={session.id} userId={currentUserId} isTutor={isTutor} />
             </TabsContent>
@@ -805,7 +818,7 @@ function PollsPanel({ sessionId, userId, isTutor }: { sessionId: string; userId:
     setQ(""); setOpts(["", ""]); setCreating(false);
   };
 
-  // Voting is optimistic and changeable, so you always see your own choice instantly.
+  // One row per person per poll: upsert so changing your pick can't lose it.
   const vote = async (pollId: string, idx: number) => {
     const existing = votes.find((v) => v.poll_id === pollId && v.user_id === userId);
     if (existing?.option_index === idx) return;
@@ -813,17 +826,19 @@ function PollsPanel({ sessionId, userId, isTutor }: { sessionId: string; userId:
       ...cur.filter((v) => !(v.poll_id === pollId && v.user_id === userId)),
       { poll_id: pollId, user_id: userId, option_index: idx },
     ]);
-    if (existing) {
-      await supabase.from("session_poll_votes").delete().eq("poll_id", pollId).eq("user_id", userId);
-    }
     const { error } = await supabase
       .from("session_poll_votes")
-      .insert({ poll_id: pollId, user_id: userId, option_index: idx });
+      .upsert({ poll_id: pollId, user_id: userId, option_index: idx }, { onConflict: "poll_id,user_id" });
     if (error) {
       toast.error(error.message);
-      setVotes((cur) => cur.filter((v) => !(v.poll_id === pollId && v.user_id === userId)));
+      setVotes((cur) =>
+        existing
+          ? [...cur.filter((v) => !(v.poll_id === pollId && v.user_id === userId)), existing]
+          : cur.filter((v) => !(v.poll_id === pollId && v.user_id === userId)),
+      );
     }
   };
+
 
   const closePoll = async (pollId: string, closed: boolean) => {
     const { error } = await supabase.from("session_polls").update({ closed }).eq("id", pollId);
@@ -1201,7 +1216,7 @@ function ReactionsBar({ sessionId, userId }: { sessionId: string; userId: string
   };
 
   return (
-    <div className="pointer-events-none fixed bottom-4 right-4 z-20 flex flex-col items-end gap-2">
+    <div className="pointer-events-none fixed bottom-4 right-4 z-50 flex flex-col items-end gap-2">
       {/* Floating reactions */}
       <div className="flex h-8 items-end gap-1">
         {recent.map((r) => (

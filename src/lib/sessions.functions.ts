@@ -32,7 +32,7 @@ export const generateSessionSummary = createServerFn({ method: "POST" })
       if (!p) throw new Error("Forbidden");
     }
 
-    const [{ data: messages }, { data: notes }] = await Promise.all([
+    const [{ data: messages }, { data: notes }, { data: transcript }] = await Promise.all([
       supabase
         .from("session_messages")
         .select("content, created_at")
@@ -44,10 +44,28 @@ export const generateSessionSummary = createServerFn({ method: "POST" })
         .select("content")
         .eq("session_id", data.sessionId)
         .maybeSingle(),
+      supabase
+        .from("session_transcripts")
+        .select("speaker_name, content, at_seconds")
+        .eq("session_id", data.sessionId)
+        .order("at_seconds", { ascending: true })
+        .limit(2000),
     ]);
 
-    const chatBlob = (messages ?? []).map((m) => `- ${m.content}`).join("\n").slice(0, 12_000);
+    const mmss = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+    const spokenLines = transcript ?? [];
+    const spokenBlob = spokenLines
+      .map((t) => `[${mmss(t.at_seconds)}] ${t.speaker_name}: ${t.content}`)
+      .join("\n")
+      .slice(0, 40_000);
+    const chatBlob = (messages ?? []).map((m) => `- ${m.content}`).join("\n").slice(0, 8_000);
     const notesBlob = (notes?.content ?? "").slice(0, 8_000);
+
+    if (spokenLines.length === 0 && !chatBlob && !notesBlob) {
+      throw new Error(
+        "There's nothing to summarise yet. Turn on \"Record transcript\" in the Intel tab so the recap can hear the session.",
+      );
+    }
 
     const { createLovableAiGatewayProvider } = await import("@/lib/ai-gateway.server");
     const gateway = createLovableAiGatewayProvider(apiKey);
@@ -61,13 +79,20 @@ export const generateSessionSummary = createServerFn({ method: "POST" })
           confused_topics: z.array(z.string()).max(6),
         }),
       }),
-      prompt: `You are an academic coach. Read this peer-learning session and produce:
-1) A friendly 3-sentence summary of what happened.
-2) Up to 8 short key points learners should remember.
-3) Up to 6 topics learners seemed confused about (look for "I don't get", "?", "didn't understand", repeated questions on the same idea).
+      prompt: `You are an academic coach reviewing a peer-learning session. The SPOKEN TRANSCRIPT is your primary source of truth — it is what the tutor and learners actually said. Chat and notes are secondary context only.
+
+Ground every statement in the transcript. Quote or paraphrase what was actually taught, in the order it was taught. Never invent topics that were not discussed. If the transcript is thin, say so plainly in the summary instead of guessing.
+
+Produce:
+1) "summary": 3-5 sentences on what was actually taught and covered, in plain language.
+2) "key_points": up to 8 concrete takeaways a learner should remember, each drawn from the transcript (include a definition, rule, formula or example when one was given).
+3) "confused_topics": up to 6 things learners struggled with — look for questions, "I don't get", repeated re-explanations of the same idea, or the tutor rephrasing.
 
 Session title: ${session.title}
 Description: ${session.description ?? "(none)"}
+
+--- SPOKEN TRANSCRIPT (${spokenLines.length} lines) ---
+${spokenBlob || "(no speech captured)"}
 
 --- CHAT ---
 ${chatBlob || "(no chat)"}
@@ -75,6 +100,7 @@ ${chatBlob || "(no chat)"}
 --- SHARED NOTES ---
 ${notesBlob || "(no notes)"}`,
     });
+
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await supabaseAdmin

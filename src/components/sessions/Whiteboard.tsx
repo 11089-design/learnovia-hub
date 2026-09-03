@@ -108,24 +108,16 @@ function WhiteboardImpl({ sessionId, userId }: { sessionId: string; userId: stri
         setLoaded(true);
       })();
 
-      // Quiet autosave, debounced and state-free so strokes aren't interrupted.
-      const unlisten = editor.store.listen(
-        () => {
-          if (saveTimer.current) clearTimeout(saveTimer.current);
-          saveTimer.current = setTimeout(() => {
-            void persist(false);
-          }, 2000);
-        },
-        { source: "user", scope: "document" },
-      );
-
+      // No timed autosave: any write-while-drawing risked tearing down the
+      // canvas mid-stroke. Local work is kept by `persistenceKey`; publishing
+      // to the room is an explicit "Share board" action.
       return () => {
-        unlisten();
         if (saveTimer.current) clearTimeout(saveTimer.current);
       };
     },
-    [persist],
+    [],
   );
+
 
   // Only *notify* about remote changes — never force them into the live canvas.
   useEffect(() => {

@@ -7,6 +7,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { CLASSROOM_TOOLS, FAQS, ROOM_GUIDE_SEEN_KEY } from "@/lib/guide-content";
 import { RoomWelcomeDialog } from "@/components/sessions/RoomWelcomeDialog";
 import { THEMES, applyTheme } from "@/components/ThemeSwitcher";
+import { SiteHeader } from "@/components/SiteHeader";
+import { KidsModeCard } from "@/components/settings/KidsModeCard";
 
 const THEME_KEY = "learnova-theme";
 
@@ -79,17 +81,12 @@ function SettingsPage() {
     <div className="min-h-screen bg-background">
       <RoomWelcomeDialog open={tourOpen} onOpenChange={setTourOpen} />
 
-      <header className="sticky top-0 z-40 border-b border-border/50 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3">
-          <Link to="/dashboard">
-            <Button variant="ghost" size="sm"><ArrowLeft className="h-4 w-4" /></Button>
-          </Link>
-          <h1 className="text-base font-semibold md:text-lg">Settings &amp; Help</h1>
-        </div>
-      </header>
+      <SiteHeader variant="app" />
 
       <main className="mx-auto max-w-5xl px-4 py-8">
+        <h1 className="mb-6 font-display text-3xl font-bold tracking-tight md:text-4xl">Settings &amp; Help</h1>
         <ThemePicker />
+        <div className="mt-6"><KidsModeCard /></div>
 
         <section className="glass mt-6 rounded-3xl p-6 md:p-8">
 

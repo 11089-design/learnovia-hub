@@ -99,11 +99,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
+/** Applied before first paint so the saved theme never flashes lavender first. */
+const THEME_BOOT = `(function(){try{var t=localStorage.getItem('learnova-theme')||'lavender';var r=document.documentElement;if(t==='lavender'){r.removeAttribute('data-theme')}else{r.setAttribute('data-theme',t)}if(t==='neon'){r.classList.add('dark');r.style.colorScheme='dark'}else{r.classList.remove('dark');r.style.colorScheme='light'}}catch(e){}})();`;
+
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
         <HeadContent />
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
       </head>
       <body>
         {children}
@@ -112,6 +116,7 @@ function RootShell({ children }: { children: ReactNode }) {
     </html>
   );
 }
+
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
