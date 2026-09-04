@@ -6,7 +6,8 @@ import {
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
-import { Navbar } from "@/components/landing/Navbar";
+import { SiteHeader } from "@/components/SiteHeader";
+import { SessionRecap } from "@/components/sessions/SessionRecap";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -139,7 +140,7 @@ function SessionDetailPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      <SiteHeader variant="app" />
       <main className="mx-auto max-w-6xl px-4 pt-24 pb-16">
         <Button variant="ghost" size="sm" className="mb-3" onClick={() => navigate({ to: "/explore" })}>
           <ArrowLeft className="mr-1 h-4 w-4" /> Back
@@ -181,6 +182,7 @@ function SessionDetailPage() {
                 <TabsTrigger value="chat" className="rounded-full" disabled={!canChat} title={canChat ? "" : "Enroll to chat"}>
                   <MessageSquare className="mr-1 h-3.5 w-3.5" /> Group chat
                 </TabsTrigger>
+                {isOver && <TabsTrigger value="recap" className="rounded-full"><Sparkles className="mr-1 h-3.5 w-3.5" /> Recap</TabsTrigger>}
               </TabsList>
 
               <TabsContent value="overview" className="mt-6 space-y-8">
