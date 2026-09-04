@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Trophy, Flame, Star, GraduationCap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -27,13 +28,11 @@ function LeaderboardPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-40 border-b border-border/50 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/dashboard" })}><ArrowLeft className="h-4 w-4" /></Button>
-          <Trophy className="h-5 w-5 text-primary" />
-          <h1 className="text-lg font-semibold">Leaderboard</h1>
-        </div>
-      </header>
+      <SiteHeader variant="app" />
+      <div className="mx-auto flex max-w-5xl items-center gap-2 px-4 pt-6">
+        <Trophy className="h-5 w-5 text-primary" />
+        <h1 className="font-display text-2xl font-bold tracking-tight">Leaderboard</h1>
+      </div>
 
       <main className="mx-auto grid max-w-5xl gap-5 px-4 py-8 md:grid-cols-2">
         <section className="glass rounded-2xl p-5 shadow-soft">

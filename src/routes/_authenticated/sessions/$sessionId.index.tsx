@@ -6,7 +6,8 @@ import {
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
-import { Navbar } from "@/components/landing/Navbar";
+import { SiteHeader } from "@/components/SiteHeader";
+import { SessionRecap } from "@/components/sessions/SessionRecap";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -60,7 +61,7 @@ function SessionDetailPage() {
   const [enrolledCount, setEnrolledCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
-  const [tab, setTab] = useState<"overview" | "chat">("overview");
+  const [tab, setTab] = useState<"overview" | "chat" | "recap">("overview");
 
   const load = async () => {
     const { data: u } = await supabase.auth.getUser();
@@ -139,7 +140,7 @@ function SessionDetailPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      <SiteHeader variant="app" />
       <main className="mx-auto max-w-6xl px-4 pt-24 pb-16">
         <Button variant="ghost" size="sm" className="mb-3" onClick={() => navigate({ to: "/explore" })}>
           <ArrowLeft className="mr-1 h-4 w-4" /> Back
@@ -181,6 +182,7 @@ function SessionDetailPage() {
                 <TabsTrigger value="chat" className="rounded-full" disabled={!canChat} title={canChat ? "" : "Enroll to chat"}>
                   <MessageSquare className="mr-1 h-3.5 w-3.5" /> Group chat
                 </TabsTrigger>
+                {isOver && <TabsTrigger value="recap" className="rounded-full"><Sparkles className="mr-1 h-3.5 w-3.5" /> Recap</TabsTrigger>}
               </TabsList>
 
               <TabsContent value="overview" className="mt-6 space-y-8">
@@ -243,6 +245,18 @@ function SessionDetailPage() {
                   </div>
                 )}
               </TabsContent>
+
+              {isOver && (
+                <TabsContent value="recap" className="mt-6">
+                  {canChat ? (
+                    <SessionRecap sessionId={session.id} title={session.title} />
+                  ) : (
+                    <div className="glass grid place-items-center rounded-2xl p-12 text-center">
+                      <p className="text-sm text-muted-foreground">Only people who joined this session can see its recap.</p>
+                    </div>
+                  )}
+                </TabsContent>
+              )}
             </Tabs>
           </div>
 

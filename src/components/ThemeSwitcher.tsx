@@ -19,7 +19,7 @@ export function applyTheme(id: string) {
   if (id === "lavender") root.removeAttribute("data-theme");
   else root.setAttribute("data-theme", id);
   root.classList.toggle("dark", id === "neon");
-  root.style.colorScheme = id === "neon" ? "dark" : "light";
+
 }
 
 

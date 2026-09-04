@@ -100,7 +100,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 /** Applied before first paint so the saved theme never flashes lavender first. */
-const THEME_BOOT = `(function(){try{var t=localStorage.getItem('learnova-theme')||'lavender';var r=document.documentElement;if(t==='lavender'){r.removeAttribute('data-theme')}else{r.setAttribute('data-theme',t)}if(t==='neon'){r.classList.add('dark');r.style.colorScheme='dark'}else{r.classList.remove('dark');r.style.colorScheme='light'}}catch(e){}})();`;
+const THEME_BOOT = `(function(){try{var t=localStorage.getItem('learnova-theme')||'lavender';var r=document.documentElement;if(t==='lavender'){r.removeAttribute('data-theme')}else{r.setAttribute('data-theme',t)}if(t==='neon'){r.classList.add('dark')}else{r.classList.remove('dark')}}catch(e){}})();`;
 
 function RootShell({ children }: { children: ReactNode }) {
   return (

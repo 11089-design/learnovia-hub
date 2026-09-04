@@ -3,6 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { MessageSquare, Plus, Search, ArrowLeft } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
+import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -78,19 +79,13 @@ function MessagesInbox() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-40 border-b border-border/50 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/dashboard" })}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <h1 className="text-lg font-semibold">Messages</h1>
-          </div>
-          <Button size="sm" onClick={() => setShowNew((v) => !v)} className="rounded-full bg-brand-gradient text-white">
-            <Plus className="mr-1 h-3.5 w-3.5" /> New
-          </Button>
-        </div>
-      </header>
+      <SiteHeader variant="app" />
+      <div className="mx-auto flex max-w-3xl items-center justify-between px-4 pt-6">
+        <h1 className="font-display text-2xl font-bold tracking-tight">Messages</h1>
+        <Button size="sm" onClick={() => setShowNew((v) => !v)} className="rounded-full bg-brand-gradient text-white">
+          <Plus className="mr-1 h-3.5 w-3.5" /> New
+        </Button>
+      </div>
       <main className="mx-auto max-w-3xl px-4 py-6">
         {showNew && (
           <div className="mb-4 rounded-2xl border border-border bg-card p-3">

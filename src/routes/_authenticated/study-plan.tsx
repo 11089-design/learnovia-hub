@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
+import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -166,22 +167,18 @@ function StudyPlanPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-40 border-b border-border/50 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/dashboard" })}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <Sparkles className="h-5 w-5 text-primary" />
-          <h1 className="text-lg font-semibold">AI Study Planner</h1>
-          {plan && (
-            <div className="ml-auto flex items-center gap-2 text-xs">
-              <TrendingUp className="h-3.5 w-3.5 text-primary" />
-              <span className="font-semibold">{pct}%</span>
-              <span className="text-muted-foreground">· {doneTasks}/{totalTasks}</span>
-            </div>
-          )}
-        </div>
-      </header>
+      <SiteHeader variant="app" />
+      <div className="mx-auto flex max-w-5xl items-center gap-2 px-4 pt-6">
+        <Sparkles className="h-5 w-5 text-primary" />
+        <h1 className="font-display text-2xl font-bold tracking-tight">AI Study Planner</h1>
+        {plan && (
+          <div className="ml-auto flex items-center gap-2 text-xs">
+            <TrendingUp className="h-3.5 w-3.5 text-primary" />
+            <span className="font-semibold">{pct}%</span>
+            <span className="text-muted-foreground">· {doneTasks}/{totalTasks}</span>
+          </div>
+        )}
+      </div>
 
       <main className="mx-auto max-w-5xl px-4 py-6">
         {/* Input card */}
