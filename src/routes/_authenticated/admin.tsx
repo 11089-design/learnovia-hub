@@ -3,6 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Shield, Flag, Check, X, Trash2, Loader2, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
+import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -103,13 +104,11 @@ function AdminPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-40 border-b border-border/50 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/dashboard" })}><ArrowLeft className="h-4 w-4" /></Button>
-          <Shield className="h-5 w-5 text-primary" />
-          <h1 className="text-lg font-semibold">Moderation</h1>
-        </div>
-      </header>
+      <SiteHeader variant="app" />
+      <div className="mx-auto flex max-w-5xl items-center gap-2 px-4 pt-6">
+        <Shield className="h-5 w-5 text-primary" />
+        <h1 className="font-display text-2xl font-bold tracking-tight">Moderation</h1>
+      </div>
       <main className="mx-auto max-w-5xl px-4 py-8">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-sm font-semibold"><Flag className="h-4 w-4" /> Reports queue</h2>

@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Loader2, Plus, Star, Heart, Rocket, Sun } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { SiteHeader } from "@/components/SiteHeader";
 import { applyTheme } from "@/components/ThemeSwitcher";
 import {
   KIDS_MASCOTS, OwlMascot, ChickMascot, NumbersMascot, BookMascot, ClayMascot, BeakerMascot,
@@ -74,13 +75,11 @@ function KidsPage() {
       <div className="pointer-events-none absolute -left-24 top-10 h-72 w-72 rounded-full bg-primary/25 blur-3xl" style={{ animation: "blob 14s ease-in-out infinite" }} />
       <div className="pointer-events-none absolute -right-20 top-64 h-80 w-80 rounded-full bg-accent/30 blur-3xl" style={{ animation: "blob 18s ease-in-out infinite reverse" }} />
 
-      <header className="relative z-10 mx-auto flex max-w-6xl items-center justify-between px-4 py-6">
-        <Link to="/" className="flex items-center gap-2">
-          <span className="grid h-11 w-11 place-items-center rounded-2xl bg-brand-gradient text-white shadow-soft animate-wiggle"><OwlMascot className="h-7 w-7" /></span>
-          <span className="text-xl font-bold">Learnova <span className="gradient-text">Kids</span></span>
-        </Link>
-        <Link to="/"><Button variant="ghost" className="rounded-full">Grown-up mode</Button></Link>
-      </header>
+      <SiteHeader variant="public" />
+      <div className="relative z-10 mx-auto flex max-w-6xl items-center gap-3 px-4 pt-28">
+        <span className="grid h-11 w-11 place-items-center rounded-2xl bg-brand-gradient text-white shadow-soft animate-wiggle"><OwlMascot className="h-7 w-7" /></span>
+        <span className="font-display text-xl font-bold">Learnova <span className="gradient-text">Kids</span></span>
+      </div>
 
       <main className="relative z-10 mx-auto max-w-6xl px-4 pb-24">
         <section className="glass animate-pop-in rounded-[2.5rem] p-8 text-center shadow-soft">
