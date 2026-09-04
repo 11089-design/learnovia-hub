@@ -12,3 +12,12 @@
 
 ## Later
 - [ ] Full A/V recording playback (needs LiveKit egress storage) — transcript + AI recap ships first
+
+## Update
+- [x] LiveCaptions wired into the room (import fixed)
+- [x] AI recap now reads the spoken transcript first (session_transcripts), with a clear error when nothing was captured
+- [x] Recap + downloadable transcript tab on ended sessions
+- [x] One shared SiteHeader on every page (kids, admin, leaderboard, study plan, messages, session detail, settings)
+- [x] Kids mode toggle in Settings
+- [x] Theme boot no longer causes a hydration mismatch (color-scheme moved to CSS)
+- [ ] Full A/V recording/replay still needs LiveKit egress + storage config
