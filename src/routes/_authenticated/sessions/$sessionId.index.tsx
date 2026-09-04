@@ -61,7 +61,7 @@ function SessionDetailPage() {
   const [enrolledCount, setEnrolledCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
-  const [tab, setTab] = useState<"overview" | "chat">("overview");
+  const [tab, setTab] = useState<"overview" | "chat" | "recap">("overview");
 
   const load = async () => {
     const { data: u } = await supabase.auth.getUser();
