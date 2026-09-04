@@ -243,6 +243,18 @@ function SessionDetailPage() {
                   </div>
                 )}
               </TabsContent>
+
+              {isOver && (
+                <TabsContent value="recap" className="mt-6">
+                  {canChat ? (
+                    <SessionRecap sessionId={session.id} title={session.title} />
+                  ) : (
+                    <div className="glass grid place-items-center rounded-2xl p-12 text-center">
+                      <p className="text-sm text-muted-foreground">Only people who joined this session can see its recap.</p>
+                    </div>
+                  )}
+                </TabsContent>
+              )}
             </Tabs>
           </div>
 
