@@ -2,22 +2,24 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
   LiveKitRoom,
+  VideoConference,
   RoomAudioRenderer,
-  useParticipants,
   useLocalParticipant,
   useRoomContext,
-  useTracks,
-  ParticipantContext,
-  useIsMuted,
-  useIsSpeaking,
 } from "@livekit/components-react";
-
 import "@livekit/components-styles";
-import { Track, type Participant } from "livekit-client";
-import { Loader2, Mic, MicOff, PhoneOff, Volume2, AlertTriangle, VideoOff } from "lucide-react";
+import {
+  Loader2, Mic, MicOff, PhoneOff, AlertTriangle, VideoOff,
+  Video as VideoIcon, MonitorUp, MonitorX,
+} from "lucide-react";
+import { toast } from "sonner";
 import { getCommunityVoiceToken } from "@/lib/livekit.functions";
 import { Button } from "@/components/ui/button";
 
+/**
+ * Community video room: camera + mic + screen share for a channel.
+ * One control bar only — LiveKit's built-in bar is hidden.
+ */
 export function CommunityVoiceRoom({
   channelId,
   channelName,
@@ -49,7 +51,7 @@ export function CommunityVoiceRoom({
         if (cancelled) return;
         setState({
           kind: "error",
-          message: err instanceof Error ? err.message : "Couldn't connect to voice",
+          message: err instanceof Error ? err.message : "Couldn't connect to the video room",
         });
       });
     return () => {
@@ -62,7 +64,7 @@ export function CommunityVoiceRoom({
       <div className="grid h-full min-h-[300px] place-items-center">
         <div className="flex flex-col items-center gap-2 text-muted-foreground">
           <Loader2 className="h-6 w-6 animate-spin" />
-          <span className="text-sm">Connecting to voice…</span>
+          <span className="text-sm">Joining {channelName}…</span>
         </div>
       </div>
     );
@@ -73,7 +75,7 @@ export function CommunityVoiceRoom({
       <div className="grid h-full min-h-[300px] place-items-center p-6 text-center">
         <div>
           <VideoOff className="mx-auto h-8 w-8 text-muted-foreground" />
-          <h3 className="mt-3 font-semibold">Voice not yet enabled</h3>
+          <h3 className="mt-3 font-semibold">Live video not yet enabled</h3>
           <p className="mt-1 text-sm text-muted-foreground">{state.message}</p>
           <Button variant="outline" className="mt-4 rounded-full" onClick={onLeave}>Back</Button>
         </div>
@@ -94,46 +96,81 @@ export function CommunityVoiceRoom({
   }
 
   return (
-    <LiveKitRoom
-      serverUrl={state.url}
-      token={state.token}
-      connect
-      audio
-      video={false}
-      onDisconnected={onLeave}
-      data-lk-theme="default"
-    >
-      <VoiceRoomUI channelName={channelName} onLeave={onLeave} />
-      <RoomAudioRenderer />
-    </LiveKitRoom>
+    <div className="flex h-[calc(100vh-12rem)] flex-col overflow-hidden rounded-2xl" data-lk-theme="default">
+      <LiveKitRoom
+        serverUrl={state.url}
+        token={state.token}
+        connect
+        video
+        audio
+        style={{ height: "100%", display: "flex", flexDirection: "column" }}
+      >
+        <div className="flex items-center justify-between border-b border-border/50 px-3 py-2 text-sm font-semibold">
+          <span className="flex items-center gap-1.5"><VideoIcon className="h-4 w-4 text-primary" /> {channelName}</span>
+        </div>
+        <div className="flex-1 min-h-[280px] [&_.lk-control-bar]:hidden">
+          <VideoConference />
+        </div>
+        <RoomControls onLeave={onLeave} />
+        <RoomAudioRenderer />
+      </LiveKitRoom>
+    </div>
   );
 }
 
-function VoiceRoomUI({ channelName, onLeave }: { channelName: string; onLeave: () => void }) {
-  const participants = useParticipants();
+function RoomControls({ onLeave }: { onLeave: () => void }) {
   const room = useRoomContext();
   const { localParticipant } = useLocalParticipant();
-  const [muted, setMuted] = useState(!localParticipant?.isMicrophoneEnabled);
+  const [micOn, setMicOn] = useState(true);
+  const [camOn, setCamOn] = useState(true);
+  const [sharing, setSharing] = useState(false);
   const [leaving, setLeaving] = useState(false);
-  // Subscribe to remote audio tracks so RoomAudioRenderer plays them.
-  useTracks([Track.Source.Microphone], { onlySubscribed: false });
 
-  const toggleMute = async () => {
+  useEffect(() => {
     if (!localParticipant) return;
-    const next = !muted;
-    await localParticipant.setMicrophoneEnabled(!next);
-    setMuted(next);
+    setMicOn(localParticipant.isMicrophoneEnabled);
+    setCamOn(localParticipant.isCameraEnabled);
+    setSharing(localParticipant.isScreenShareEnabled);
+  }, [localParticipant]);
+
+  const toggleMic = async () => {
+    if (!localParticipant) return;
+    const next = !micOn;
+    await localParticipant.setMicrophoneEnabled(next);
+    setMicOn(next);
   };
 
-  // Actually disconnect from LiveKit before handing control back to the page —
-  // otherwise the mic stays live and "Leave" appears to do nothing.
+  const toggleCam = async () => {
+    if (!localParticipant) return;
+    const next = !camOn;
+    await localParticipant.setCameraEnabled(next);
+    setCamOn(next);
+  };
+
+  const toggleShare = async () => {
+    if (!localParticipant) return;
+    const next = !sharing;
+    try {
+      await localParticipant.setScreenShareEnabled(next, { audio: true });
+      setSharing(next);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Screen share failed";
+      if (/abort|cancel/i.test(msg)) toast.info("Screen share cancelled.");
+      else {
+        toast.error("Your browser blocked the screen picker. Try opening this page in its own tab.", {
+          action: { label: "Open in new tab", onClick: () => window.open(window.location.href, "_blank", "noopener") },
+        });
+      }
+      setSharing(localParticipant.isScreenShareEnabled);
+    }
+  };
+
   const leave = async () => {
     setLeaving(true);
     try {
-      await localParticipant?.setMicrophoneEnabled(false);
       await room.disconnect(true);
     } catch {
-      /* already disconnected */
+      /* already gone */
     } finally {
       setLeaving(false);
       onLeave();
@@ -141,82 +178,28 @@ function VoiceRoomUI({ channelName, onLeave }: { channelName: string; onLeave: (
   };
 
   return (
-    <div className="flex h-[calc(100vh-12rem)] flex-col">
-      <div className="flex items-center justify-between border-b border-border/50 px-4 py-3">
-        <h2 className="flex items-center gap-1 font-semibold">
-          <Volume2 className="h-4 w-4" /> {channelName}
-          <span className="ml-2 text-xs font-normal text-muted-foreground">
-            {participants.length} in voice
-          </span>
-        </h2>
-        <Button size="sm" variant="destructive" className="rounded-full" onClick={leave} disabled={leaving}>
-          {leaving ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <PhoneOff className="mr-1 h-3.5 w-3.5" />}
-          Leave
-        </Button>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-4">
-        {participants.length === 0 ? (
-          <p className="py-12 text-center text-xs text-muted-foreground">
-            You're the only one here — invite a friend.
-          </p>
-        ) : (
-          <ul className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
-            {participants.map((p) => (
-              <ParticipantContext.Provider key={p.identity} value={p}>
-                <VoiceTile participant={p} isSelf={p.identity === localParticipant?.identity} />
-              </ParticipantContext.Provider>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      <div className="flex items-center justify-center gap-3 border-t border-border/50 p-4">
-        <Button
-          size="lg"
-          variant={muted ? "outline" : "default"}
-          className={`rounded-full ${muted ? "" : "bg-brand-gradient text-white"}`}
-          onClick={toggleMute}
-        >
-          {muted ? <MicOff className="mr-2 h-4 w-4" /> : <Mic className="mr-2 h-4 w-4" />}
-          {muted ? "Unmute" : "Mute"}
-        </Button>
-        <Button size="lg" variant="destructive" className="rounded-full" onClick={leave} disabled={leaving}>
-          {leaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PhoneOff className="mr-2 h-4 w-4" />}
-          Leave voice
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-
-function VoiceTile({ participant, isSelf }: { participant: Participant; isSelf: boolean }) {
-  const isMuted = useIsMuted({ source: Track.Source.Microphone, participant });
-  const isSpeaking = useIsSpeaking(participant);
-  const name = participant.name || participant.identity.slice(0, 6);
-  return (
-    <li
-      className={`flex items-center gap-3 rounded-2xl border p-3 transition ${
-        isSpeaking ? "border-primary shadow-soft" : "border-border/60"
-      }`}
-    >
-      <div
-        className={`grid h-12 w-12 place-items-center rounded-full bg-brand-gradient text-white ring-2 transition ${
-          isSpeaking ? "ring-primary" : "ring-transparent"
-        }`}
+    <div className="flex flex-wrap items-center gap-2 border-t border-border/50 bg-card/80 px-3 py-2 backdrop-blur">
+      <Button size="sm" variant={micOn ? "outline" : "secondary"} className="rounded-full" onClick={toggleMic}>
+        {micOn ? <Mic className="mr-1 h-3.5 w-3.5" /> : <MicOff className="mr-1 h-3.5 w-3.5 text-destructive" />}
+        {micOn ? "Mic on" : "Mic off"}
+      </Button>
+      <Button size="sm" variant={camOn ? "outline" : "secondary"} className="rounded-full" onClick={toggleCam}>
+        {camOn ? <VideoIcon className="mr-1 h-3.5 w-3.5" /> : <VideoOff className="mr-1 h-3.5 w-3.5 text-destructive" />}
+        {camOn ? "Camera on" : "Camera off"}
+      </Button>
+      <Button
+        size="sm"
+        variant="outline"
+        className={`rounded-full ${sharing ? "border-transparent bg-primary text-primary-foreground hover:bg-primary/90" : ""}`}
+        onClick={toggleShare}
       >
-        <span className="text-sm font-semibold">{name.slice(0, 1).toUpperCase()}</span>
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">
-          {name} {isSelf && <span className="text-xs text-muted-foreground">(you)</span>}
-        </p>
-        <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
-          {isMuted ? <MicOff className="h-3 w-3" /> : <Mic className="h-3 w-3" />}
-          {isMuted ? "Muted" : isSpeaking ? "Speaking" : "Listening"}
-        </p>
-      </div>
-    </li>
+        {sharing ? <MonitorX className="mr-1 h-3.5 w-3.5" /> : <MonitorUp className="mr-1 h-3.5 w-3.5" />}
+        {sharing ? "Stop sharing" : "Share screen"}
+      </Button>
+      <Button size="sm" variant="destructive" className="ml-auto rounded-full" onClick={leave} disabled={leaving}>
+        {leaving ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <PhoneOff className="mr-1 h-3.5 w-3.5" />}
+        Leave
+      </Button>
+    </div>
   );
 }
