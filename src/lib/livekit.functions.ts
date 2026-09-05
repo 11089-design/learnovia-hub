@@ -113,8 +113,8 @@ export const getCommunityVoiceToken = createServerFn({ method: "POST" })
       .select("id, community_id, kind, name")
       .eq("id", data.channelId)
       .maybeSingle();
-    if (chErr || !channel) throw new Error("Voice channel not found");
-    if (channel.kind !== "voice") throw new Error("Not a voice channel");
+    if (chErr || !channel) throw new Error("Video room not found");
+    if (channel.kind !== "voice") throw new Error("Not a video room channel");
 
     const { data: member } = await supabase
       .from("community_members")
@@ -122,7 +122,7 @@ export const getCommunityVoiceToken = createServerFn({ method: "POST" })
       .eq("community_id", channel.community_id)
       .eq("user_id", userId)
       .maybeSingle();
-    if (!member) throw new Error("Join the community to enter voice.");
+    if (!member) throw new Error("Join the community to enter the video room.");
 
     const room = `community-${channel.id}`;
     const token = await mintToken({
@@ -131,8 +131,8 @@ export const getCommunityVoiceToken = createServerFn({ method: "POST" })
       identity: userId,
       displayName: data.displayName,
       room,
-      // audio-only channel — restrict publishable sources
-      canPublishSources: ["microphone"],
+      // community video room — camera, mic and screen share all allowed
+      canPublishSources: ["microphone", "camera", "screen_share", "screen_share_audio"],
     });
 
     return { configured: true as const, token, url: env.url, room };
