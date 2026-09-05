@@ -300,7 +300,14 @@ export function SessionRoom({
       <main className="mx-auto grid max-w-7xl gap-4 px-4 py-4 lg:grid-cols-[1fr_400px]">
         {/* Left: video + agenda + waiting room */}
         <div className="min-h-[60vh] lg:sticky lg:top-20 lg:h-[calc(100vh-6rem)] flex flex-col">
-          <AgendaBar sessionId={session.id} isTutor={isTutor} startedAt={extras.started_at} initialAgenda={extras.agenda} />
+          <AgendaBar
+            sessionId={session.id}
+            isTutor={isTutor}
+            startedAt={extras.started_at}
+            initialAgenda={extras.agenda}
+            onStarted={(iso) => setExtras((p) => ({ ...p, started_at: iso }))}
+          />
+
           <WaitingRoomPanel sessionId={session.id} isTutor={isTutor} />
           <div className="flex-1 min-h-[400px]">
             <LiveVideoRoom
