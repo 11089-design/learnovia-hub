@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
-  Sparkles, Menu, ChevronDown, Compass, GraduationCap, Briefcase, Baby, Users,
+  Menu, ChevronDown, Compass, GraduationCap, Briefcase, Baby, Users,
   MessageSquare, Trophy, ShieldCheck, BookOpen, LifeBuoy, Wand2, Shield, LogOut, LayoutDashboard,
 } from "lucide-react";
+import { LearnovaMark } from "@/components/LearnovaMark";
+
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -30,7 +32,7 @@ const GROUPS: { label: string; links: NavLink[] }[] = [
   {
     label: "Community",
     links: [
-      { to: "/communities", label: "Communities", desc: "Channels, voice rooms, resources", icon: Users },
+      { to: "/communities", label: "Communities", desc: "Channels, video rooms, resources", icon: Users },
       { to: "/messages", label: "Messages", desc: "Your 1:1 conversations", icon: MessageSquare },
       { to: "/leaderboard", label: "Leaderboard", desc: "Streaks and top peers", icon: Trophy },
     ],
@@ -95,13 +97,12 @@ export function SiteHeader({ variant = "public" }: { variant?: "public" | "app" 
           : "glass flex items-center gap-2 rounded-2xl px-3 py-2.5 sm:px-5"}
         >
           <Link to={signedIn ? "/dashboard" : "/"} className="flex shrink-0 items-center gap-2">
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-brand-gradient text-white shadow-soft">
-              <Sparkles className="h-5 w-5" />
-            </div>
+            <LearnovaMark />
             <span className="font-display text-base font-bold tracking-tight sm:text-lg">
               Learn<span className="gradient-text">ova</span>
             </span>
           </Link>
+
 
           {/* Grouped desktop nav — three calm entry points */}
           <nav className="ml-2 hidden flex-1 items-center gap-1 md:flex">
