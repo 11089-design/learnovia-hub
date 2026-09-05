@@ -107,10 +107,10 @@ export function LiveVideoRoom({
         data-lk-theme="default"
         style={{ height: "100%", minHeight: 400, display: "flex", flexDirection: "column" }}
       >
-        <RoomControls onLeave={onLeave} />
-        <div className="flex-1 min-h-[320px]">
+        <div className="flex-1 min-h-[320px] [&_.lk-control-bar]:hidden">
           <VideoConference />
         </div>
+        <RoomControls onLeave={onLeave} />
         <RoomAudioRenderer />
       </LiveKitRoom>
     </div>
@@ -147,28 +147,11 @@ function RoomControls({ onLeave }: { onLeave?: () => void }) {
     setCamOn(next);
   };
 
-  /** True when the page is embedded and the embed doesn't allow display-capture. */
-  const shareBlockedByEmbed = () => {
-    if (typeof window === "undefined") return false;
-    const embedded = window.self !== window.top;
-    if (!embedded) return false;
-    const fp = (document as unknown as { featurePolicy?: { allowsFeature: (f: string) => boolean } }).featurePolicy;
-    if (fp?.allowsFeature) return !fp.allowsFeature("display-capture");
-    return true; // can't prove it's allowed while embedded
-  };
-
   const toggleShare = async () => {
     if (!localParticipant) return;
     const next = !sharing;
     if (next && typeof navigator !== "undefined" && !navigator.mediaDevices?.getDisplayMedia) {
       toast.error("This browser can't share a screen. Use desktop Chrome, Edge or Safari — mobile browsers don't support it.");
-      return;
-    }
-    if (next && shareBlockedByEmbed()) {
-      toast.error("Screen sharing is blocked inside this embedded preview. Open the room in its own tab, then share.", {
-        action: { label: "Open in new tab", onClick: () => window.open(window.location.href, "_blank", "noopener") },
-        duration: 8000,
-      });
       return;
     }
     try {
@@ -205,7 +188,7 @@ function RoomControls({ onLeave }: { onLeave?: () => void }) {
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b border-border/50 bg-card/80 px-3 py-2 backdrop-blur">
+    <div className="flex flex-wrap items-center gap-2 border-t border-border/50 bg-card/80 px-3 py-2 backdrop-blur">
       <Button size="sm" variant={micOn ? "outline" : "secondary"} className="rounded-full" onClick={toggleMic}>
         {micOn ? <Mic className="mr-1 h-3.5 w-3.5" /> : <MicOff className="mr-1 h-3.5 w-3.5 text-destructive" />}
         {micOn ? "Mic on" : "Mic off"}
