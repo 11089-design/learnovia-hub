@@ -63,12 +63,25 @@ export function AgendaBar({
   };
 
   const startClock = async () => {
-    const { error } = await supabase.from("sessions").update({ started_at: new Date().toISOString() }).eq("id", sessionId);
-    if (error) toast.error(error.message);
-    else toast.success("Session clock started");
+    const iso = new Date().toISOString();
+    setLocalStart(iso);
+    onStarted?.(iso);
+    const { error } = await supabase.from("sessions").update({ started_at: iso }).eq("id", sessionId);
+    if (error) {
+      setLocalStart(null);
+      onStarted?.(null as unknown as string);
+      toast.error(error.message);
+    } else {
+      toast.success("Session clock started");
+    }
   };
 
-  const elapsedMin = startedAt ? Math.max(0, Math.floor((now - new Date(startedAt).getTime()) / 60000)) : null;
+  const elapsedSec = localStart ? Math.max(0, Math.floor((now - new Date(localStart).getTime()) / 1000)) : null;
+  const elapsedMin = elapsedSec === null ? null : Math.floor(elapsedSec / 60);
+  const clockLabel =
+    elapsedSec === null
+      ? null
+      : `${Math.floor(elapsedSec / 60).toString().padStart(2, "0")}:${(elapsedSec % 60).toString().padStart(2, "0")}`;
 
   // Compute active step
   let activeIdx = -1;
@@ -86,10 +99,11 @@ export function AgendaBar({
   return (
     <div className="mb-3 rounded-2xl border border-border/60 bg-card p-2">
       <div className="mb-1.5 flex items-center justify-between px-1 text-[10px] font-semibold uppercase text-muted-foreground">
-        <span className="flex items-center gap-1"><ListChecks className="h-3 w-3" /> Agenda {elapsedMin !== null && <span className="ml-1 flex items-center gap-0.5 text-primary"><Clock className="h-3 w-3" />{elapsedMin}m</span>}</span>
+        <span className="flex items-center gap-1"><ListChecks className="h-3 w-3" /> Agenda {clockLabel && <span className="ml-1 flex items-center gap-0.5 tabular-nums text-primary"><Clock className="h-3 w-3" />{clockLabel}</span>}</span>
         {isTutor && (
           <div className="flex gap-1">
-            {!startedAt && <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px]" onClick={startClock}>Start clock</Button>}
+            {!localStart && <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px]" onClick={startClock}>Start clock</Button>}
+
             <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px]" onClick={() => setEditing((v) => !v)}>{editing ? "Done" : "Edit"}</Button>
           </div>
         )}
