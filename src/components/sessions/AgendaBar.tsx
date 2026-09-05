@@ -16,20 +16,28 @@ export function AgendaBar({
   isTutor,
   startedAt,
   initialAgenda,
+  onStarted,
 }: {
   sessionId: string;
   isTutor: boolean;
   startedAt: string | null;
   initialAgenda: AgendaItem[];
+  onStarted?: (iso: string) => void;
 }) {
   const [items, setItems] = useState<AgendaItem[]>(initialAgenda ?? []);
   const [editing, setEditing] = useState(false);
   const [now, setNow] = useState(Date.now());
+  const [localStart, setLocalStart] = useState<string | null>(startedAt);
 
   useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 30_000);
+    if (startedAt) setLocalStart(startedAt);
+  }, [startedAt]);
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
+
 
   useEffect(() => {
     const ch = supabase
