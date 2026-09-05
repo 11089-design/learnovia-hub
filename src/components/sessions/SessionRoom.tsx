@@ -300,7 +300,14 @@ export function SessionRoom({
       <main className="mx-auto grid max-w-7xl gap-4 px-4 py-4 lg:grid-cols-[1fr_400px]">
         {/* Left: video + agenda + waiting room */}
         <div className="min-h-[60vh] lg:sticky lg:top-20 lg:h-[calc(100vh-6rem)] flex flex-col">
-          <AgendaBar sessionId={session.id} isTutor={isTutor} startedAt={extras.started_at} initialAgenda={extras.agenda} />
+          <AgendaBar
+            sessionId={session.id}
+            isTutor={isTutor}
+            startedAt={extras.started_at}
+            initialAgenda={extras.agenda}
+            onStarted={(iso) => setExtras((p) => ({ ...p, started_at: iso }))}
+          />
+
           <WaitingRoomPanel sessionId={session.id} isTutor={isTutor} />
           <div className="flex-1 min-h-[400px]">
             <LiveVideoRoom
@@ -564,6 +571,8 @@ function ChatPanel({ sessionId, userId, isTutor }: { sessionId: string; userId: 
 /* ----------------------------- Notes panel ---------------------------- */
 function NotesPanel({ sessionId, userId, startedAt }: { sessionId: string; userId: string; startedAt: string | null }) {
   const sharedRef = useRef<HTMLTextAreaElement>(null);
+  const joinedAtRef = useRef<number>(Date.now());
+
   const privateRef = useRef<HTMLTextAreaElement>(null);
   const [tab, setTab] = useState<"shared" | "private">("shared");
   const [shared, setShared] = useState("");
@@ -612,11 +621,13 @@ function NotesPanel({ sessionId, userId, startedAt }: { sessionId: string; userI
   };
 
   const insertTimestamp = () => {
-    if (!startedAt) { toast.info("Tutor hasn't started the session clock yet."); return; }
-    const secs = Math.max(0, Math.floor((Date.now() - new Date(startedAt).getTime()) / 1000));
-    const mm = Math.floor(secs / 60).toString().padStart(2, "0");
+    const base = startedAt ? new Date(startedAt).getTime() : joinedAtRef.current;
+    const secs = Math.max(0, Math.floor((Date.now() - base) / 1000));
+    const hh = Math.floor(secs / 3600);
+    const mm = (Math.floor(secs / 60) % 60).toString().padStart(2, "0");
     const ss = (secs % 60).toString().padStart(2, "0");
-    const stamp = `[${mm}:${ss}] `;
+    const stamp = hh > 0 ? `[${hh}:${mm}:${ss}] ` : `[${mm}:${ss}] `;
+
     if (tab === "shared") {
       const el = sharedRef.current;
       const pos = el?.selectionStart ?? shared.length;

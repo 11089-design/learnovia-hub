@@ -1,4 +1,6 @@
-import { Sparkles, Instagram, Twitter, Youtube } from "lucide-react";
+import { Instagram, Twitter, Youtube } from "lucide-react";
+import { LearnovaMark } from "@/components/LearnovaMark";
+
 
 export function Footer() {
   const cols = [
@@ -13,10 +15,9 @@ export function Footer() {
         <div className="grid gap-12 md:grid-cols-6">
           <div className="md:col-span-2">
             <div className="flex items-center gap-2">
-              <div className="grid h-9 w-9 place-items-center rounded-xl bg-brand-gradient text-white">
-                <Sparkles className="h-5 w-5" />
-              </div>
+              <LearnovaMark />
               <span className="text-lg font-bold">Learn<span className="gradient-text">ova</span></span>
+
             </div>
             <p className="mt-4 max-w-xs text-sm text-muted-foreground">
               Learn from peers. Teach what you know. A safe peer-to-peer learning ecosystem for students 13+.

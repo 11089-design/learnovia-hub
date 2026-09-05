@@ -96,7 +96,7 @@ function SettingsPage() {
           <h2 className="mt-4 text-2xl font-bold tracking-tight">How to use Learnova</h2>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
             Explore lists every free session. Training holds multi-day courses, Workshops one-off deep dives, Kids the
-            5–12 corner, and Communities the Discord-style spaces. Inside a live room, the right-hand tabs hold Chat,
+            5–12 corner, and Communities the shared spaces. Inside a live room, the right-hand tabs hold Chat,
             Notes, Whiteboard, Resources, Polls, People and Breakouts, and the bar above the video holds mic, camera and
             screen share.
           </p>
