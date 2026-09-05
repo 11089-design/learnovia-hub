@@ -76,7 +76,7 @@ const SECTIONS = [
   {
     icon: Users,
     title: "7. Communities",
-    body: "Discord-style spaces with text channels, voice rooms, shared resource folders and posts. Join one, say hi in #general, hop into a voice room to study together.",
+    body: "Learnova spaces with text channels, video rooms, shared resource folders and posts. Join one, say hi in #general, then hop into a video room and start a Focus Sprint to study together.",
     action: { to: "/communities" as const, label: "Browse Communities" },
   },
   {

@@ -237,7 +237,7 @@ function Communities() {
     { icon: Camera, name: "Photo Walks", members: "980" },
   ];
   return (
-    <Section id="communities" eyebrow="Communities" title="Find your people. Build together." subtitle="Discord-meets-Reddit spaces with chat channels, voice rooms, pinned resources and polls.">
+    <Section id="communities" eyebrow="Communities" title="Find your people. Build together." subtitle="Learnova spaces with chat channels, video rooms, synced Focus Sprints, pinned resources and polls.">
       <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
         {items.map((c) => (
           <div key={c.name} className="glass group rounded-2xl p-5 hover-lift">

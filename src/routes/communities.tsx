@@ -42,7 +42,7 @@ function CommunitiesPage() {
         <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
           <div>
             <h1 className="text-3xl font-bold tracking-tight md:text-4xl">Communities</h1>
-            <p className="mt-1 text-muted-foreground">Discord-style hubs for the things you love.</p>
+            <p className="mt-1 text-muted-foreground">Your own hubs for the things you love.</p>
           </div>
           {signedIn && (
             <Link to="/communities/new">
