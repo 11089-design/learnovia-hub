@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft, Hash, Send, Plus, Users, Megaphone, Loader2, FolderOpen,
-  Upload, FileText, Download, Trash2, Sparkles, Folder, Volume2,
+  Upload, FileText, Download, Trash2, Sparkles, Folder, Video,
 } from "lucide-react";
 import { CommunityVoiceRoom } from "@/components/community/CommunityVoiceRoom";
 import { FocusSprint } from "@/components/community/FocusSprint";
