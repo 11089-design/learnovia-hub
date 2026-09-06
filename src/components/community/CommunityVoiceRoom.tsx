@@ -9,8 +9,15 @@ import {
 } from "@livekit/components-react";
 import "@livekit/components-styles";
 import {
-  Loader2, Mic, MicOff, PhoneOff, AlertTriangle, VideoOff,
-  Video as VideoIcon, MonitorUp, MonitorX,
+  Loader2,
+  Mic,
+  MicOff,
+  PhoneOff,
+  AlertTriangle,
+  VideoOff,
+  Video as VideoIcon,
+  MonitorUp,
+  MonitorX,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getCommunityVoiceToken } from "@/lib/livekit.functions";
@@ -77,7 +84,9 @@ export function CommunityVoiceRoom({
           <VideoOff className="mx-auto h-8 w-8 text-muted-foreground" />
           <h3 className="mt-3 font-semibold">Live video not yet enabled</h3>
           <p className="mt-1 text-sm text-muted-foreground">{state.message}</p>
-          <Button variant="outline" className="mt-4 rounded-full" onClick={onLeave}>Back</Button>
+          <Button variant="outline" className="mt-4 rounded-full" onClick={onLeave}>
+            Back
+          </Button>
         </div>
       </div>
     );
@@ -89,14 +98,19 @@ export function CommunityVoiceRoom({
         <div>
           <AlertTriangle className="mx-auto h-8 w-8 text-destructive" />
           <p className="mt-3 text-sm text-destructive">{state.message}</p>
-          <Button variant="outline" className="mt-4 rounded-full" onClick={onLeave}>Back</Button>
+          <Button variant="outline" className="mt-4 rounded-full" onClick={onLeave}>
+            Back
+          </Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-[calc(100vh-12rem)] flex-col overflow-hidden rounded-2xl" data-lk-theme="default">
+    <div
+      className="flex h-[calc(100vh-12rem)] flex-col overflow-hidden rounded-2xl"
+      data-lk-theme="default"
+    >
       <LiveKitRoom
         serverUrl={state.url}
         token={state.token}
@@ -106,7 +120,9 @@ export function CommunityVoiceRoom({
         style={{ height: "100%", display: "flex", flexDirection: "column" }}
       >
         <div className="flex items-center justify-between border-b border-border/50 px-3 py-2 text-sm font-semibold">
-          <span className="flex items-center gap-1.5"><VideoIcon className="h-4 w-4 text-primary" /> {channelName}</span>
+          <span className="flex items-center gap-1.5">
+            <VideoIcon className="h-4 w-4 text-primary" /> {channelName}
+          </span>
         </div>
         <div className="flex-1 min-h-[280px] [&_.lk-control-bar]:hidden">
           <VideoConference />
@@ -157,9 +173,15 @@ function RoomControls({ onLeave }: { onLeave: () => void }) {
       const msg = err instanceof Error ? err.message : "Screen share failed";
       if (/abort|cancel/i.test(msg)) toast.info("Screen share cancelled.");
       else {
-        toast.error("Your browser blocked the screen picker. Try opening this page in its own tab.", {
-          action: { label: "Open in new tab", onClick: () => window.open(window.location.href, "_blank", "noopener") },
-        });
+        toast.error(
+          "Your browser blocked the screen picker. Try opening this page in its own tab.",
+          {
+            action: {
+              label: "Open in new tab",
+              onClick: () => window.open(window.location.href, "_blank", "noopener"),
+            },
+          },
+        );
       }
       setSharing(localParticipant.isScreenShareEnabled);
     }
@@ -179,12 +201,30 @@ function RoomControls({ onLeave }: { onLeave: () => void }) {
 
   return (
     <div className="flex flex-wrap items-center gap-2 border-t border-border/50 bg-card/80 px-3 py-2 backdrop-blur">
-      <Button size="sm" variant={micOn ? "outline" : "secondary"} className="rounded-full" onClick={toggleMic}>
-        {micOn ? <Mic className="mr-1 h-3.5 w-3.5" /> : <MicOff className="mr-1 h-3.5 w-3.5 text-destructive" />}
+      <Button
+        size="sm"
+        variant={micOn ? "outline" : "secondary"}
+        className="rounded-full"
+        onClick={toggleMic}
+      >
+        {micOn ? (
+          <Mic className="mr-1 h-3.5 w-3.5" />
+        ) : (
+          <MicOff className="mr-1 h-3.5 w-3.5 text-destructive" />
+        )}
         {micOn ? "Mic on" : "Mic off"}
       </Button>
-      <Button size="sm" variant={camOn ? "outline" : "secondary"} className="rounded-full" onClick={toggleCam}>
-        {camOn ? <VideoIcon className="mr-1 h-3.5 w-3.5" /> : <VideoOff className="mr-1 h-3.5 w-3.5 text-destructive" />}
+      <Button
+        size="sm"
+        variant={camOn ? "outline" : "secondary"}
+        className="rounded-full"
+        onClick={toggleCam}
+      >
+        {camOn ? (
+          <VideoIcon className="mr-1 h-3.5 w-3.5" />
+        ) : (
+          <VideoOff className="mr-1 h-3.5 w-3.5 text-destructive" />
+        )}
         {camOn ? "Camera on" : "Camera off"}
       </Button>
       <Button
@@ -193,11 +233,25 @@ function RoomControls({ onLeave }: { onLeave: () => void }) {
         className={`rounded-full ${sharing ? "border-transparent bg-primary text-primary-foreground hover:bg-primary/90" : ""}`}
         onClick={toggleShare}
       >
-        {sharing ? <MonitorX className="mr-1 h-3.5 w-3.5" /> : <MonitorUp className="mr-1 h-3.5 w-3.5" />}
+        {sharing ? (
+          <MonitorX className="mr-1 h-3.5 w-3.5" />
+        ) : (
+          <MonitorUp className="mr-1 h-3.5 w-3.5" />
+        )}
         {sharing ? "Stop sharing" : "Share screen"}
       </Button>
-      <Button size="sm" variant="destructive" className="ml-auto rounded-full" onClick={leave} disabled={leaving}>
-        {leaving ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <PhoneOff className="mr-1 h-3.5 w-3.5" />}
+      <Button
+        size="sm"
+        variant="destructive"
+        className="ml-auto rounded-full"
+        onClick={leave}
+        disabled={leaving}
+      >
+        {leaving ? (
+          <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+        ) : (
+          <PhoneOff className="mr-1 h-3.5 w-3.5" />
+        )}
         Leave
       </Button>
     </div>

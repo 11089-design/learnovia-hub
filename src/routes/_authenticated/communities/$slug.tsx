@@ -2,9 +2,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft, Hash, Send, Plus, Users, Megaphone, Loader2, FolderOpen,
-  Upload, FileText, Download, Trash2, Sparkles, Folder, Volume2,
+  Upload, FileText, Download, Trash2, Sparkles, Folder, Video,
 } from "lucide-react";
 import { CommunityVoiceRoom } from "@/components/community/CommunityVoiceRoom";
+import { FocusSprint } from "@/components/community/FocusSprint";
 
 import { format, formatDistanceToNow } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -140,6 +141,7 @@ function CommunityPage() {
       <main className="mx-auto grid max-w-7xl gap-4 px-4 py-4 md:grid-cols-[220px_1fr]">
         {/* Sidebar */}
         <aside className="space-y-4">
+          <FocusSprint communityName={community.name} />
           <div className="rounded-2xl border border-border/60 bg-card p-3">
             <div className="mb-2 flex items-center justify-between px-2">
               <p className="text-[10px] font-semibold uppercase text-muted-foreground">Channels</p>
@@ -147,7 +149,7 @@ function CommunityPage() {
             </div>
             <ul className="space-y-0.5">
               {channels.map((c) => {
-                const Icon = c.kind === "voice" ? Volume2 : Hash;
+                const Icon = c.kind === "voice" ? Video : Hash;
                 return (
                   <li key={c.id}>
                     <button
@@ -155,7 +157,7 @@ function CommunityPage() {
                       className={`flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm transition ${activeChannel?.id === c.id && tab === "chat" ? "bg-primary/10 text-primary" : "hover:bg-accent/40"}`}
                     >
                       <Icon className="h-3.5 w-3.5" /> {c.name}
-                      {c.kind === "voice" && <span className="ml-auto text-[9px] uppercase text-muted-foreground">voice</span>}
+                      {c.kind === "voice" && <span className="ml-auto text-[9px] uppercase text-muted-foreground">video</span>}
                     </button>
                   </li>
                 );
@@ -213,7 +215,7 @@ function CommunityPage() {
 
               ) : (
                 <div className="grid h-[calc(100vh-12rem)] place-items-center p-6 text-center text-sm text-muted-foreground">
-                  Join the community to enter voice.
+                  Join the community to enter the video room.
                 </div>
               )
             ) : (
@@ -244,7 +246,7 @@ function NewChannelButton({ communityId, nextPos }: { communityId: string; nextP
     const { error } = await supabase.from("community_channels").insert({ community_id: communityId, name: clean, kind, position: nextPos });
     setBusy(false);
     if (error) toast.error(error.message);
-    else { setName(""); setKind("text"); setOpen(false); toast.success(`${kind === "voice" ? "Voice room " : "#"}${clean} created`); }
+    else { setName(""); setKind("text"); setOpen(false); toast.success(`${kind === "voice" ? "Video room " : "#"}${clean} created`); }
   };
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -268,7 +270,7 @@ function NewChannelButton({ communityId, nextPos }: { communityId: string; nextP
             onClick={() => setKind("voice")}
             className={`flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-sm transition ${kind === "voice" ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-accent/40"}`}
           >
-            <Volume2 className="h-4 w-4" /> Voice
+            <Video className="h-4 w-4" /> Video room
           </button>
         </div>
         <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={kind === "voice" ? "study-hall" : "study-tips"} onKeyDown={(e) => e.key === "Enter" && create()} />

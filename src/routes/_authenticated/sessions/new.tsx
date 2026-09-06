@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
+import { LearnovaMark } from "@/components/LearnovaMark";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Loader2, ArrowLeft, Sparkles } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -111,9 +112,7 @@ function NewSessionPage() {
           <ArrowLeft className="mr-1 h-4 w-4" /> Back
         </Button>
         <div className="mb-6 flex items-center gap-2">
-          <div className="grid h-10 w-10 place-items-center rounded-xl bg-brand-gradient text-white shadow-soft">
-            <Sparkles className="h-5 w-5" />
-          </div>
+          <LearnovaMark className="h-10 w-10" />
           <h1 className="text-2xl font-bold tracking-tight">Host a session</h1>
         </div>
 

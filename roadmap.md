@@ -21,3 +21,11 @@
 - [x] Kids mode toggle in Settings
 - [x] Theme boot no longer causes a hydration mismatch (color-scheme moved to CSS)
 - [ ] Full A/V recording/replay still needs LiveKit egress + storage config
+
+## Update (Sep 6)
+- [x] Session clock starts instantly and ticks live (mm:ss)
+- [x] Notes timestamp always works (falls back to your join time)
+- [x] New Learnova app icon in every header + favicon
+- [x] No mentions of other apps anywhere; community voice channels are now video rooms
+- [x] Focus Sprint — Learnova-only synced study timer in every community
+- [x] One control bar in the call (mic, camera, screen share, leave); screen share no longer pre-blocked
