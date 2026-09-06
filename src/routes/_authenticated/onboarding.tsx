@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { LearnovaMark } from "@/components/LearnovaMark";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Sparkles, GraduationCap, Users, ArrowRight, Loader2, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -118,9 +119,7 @@ export function OnboardingPage() {
 
       <div className="relative z-10 mx-auto flex min-h-screen max-w-xl flex-col justify-center px-4 py-10">
         <div className="mb-6 flex items-center justify-center gap-2">
-          <div className="grid h-10 w-10 place-items-center rounded-xl bg-brand-gradient text-white shadow-soft">
-            <Sparkles className="h-5 w-5" />
-          </div>
+          <LearnovaMark className="h-10 w-10" />
           <span className="text-xl font-bold tracking-tight">
             Learn<span className="gradient-text">ova</span>
           </span>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { LearnovaMark } from "@/components/LearnovaMark";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { Sparkles, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -103,9 +104,7 @@ function AuthPage() {
 
       <div className="relative z-10 mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-10">
         <Link to="/" className="mb-8 flex items-center justify-center gap-2">
-          <div className="grid h-10 w-10 place-items-center rounded-xl bg-brand-gradient text-white shadow-soft">
-            <Sparkles className="h-5 w-5" />
-          </div>
+          <LearnovaMark className="h-10 w-10" />
           <span className="text-xl font-bold tracking-tight">
             Learn<span className="gradient-text">ova</span>
           </span>
