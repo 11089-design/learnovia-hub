@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { LearnovaMark } from "@/components/LearnovaMark";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { Sparkles, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";

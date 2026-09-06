@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { LearnovaMark } from "@/components/LearnovaMark";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Sparkles, GraduationCap, Users, ArrowRight, Loader2, Check } from "lucide-react";
+import { GraduationCap, Users, ArrowRight, Loader2, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

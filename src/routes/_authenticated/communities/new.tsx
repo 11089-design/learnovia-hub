@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { LearnovaMark } from "@/components/LearnovaMark";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Loader2, ArrowLeft, Sparkles } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
