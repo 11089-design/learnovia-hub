@@ -7,6 +7,7 @@ import {
   useRoomContext,
   useLocalParticipant,
 } from "@livekit/components-react";
+import { ParticipantEvent, Track } from "livekit-client";
 import "@livekit/components-styles";
 import {
   Loader2, VideoOff, AlertTriangle, MonitorUp, MonitorX, Mic, MicOff,
@@ -124,13 +125,27 @@ function RoomControls({ onLeave }: { onLeave?: () => void }) {
   const [sharing, setSharing] = useState(false);
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
+  const [shareBusy, setShareBusy] = useState(false);
   const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
     if (!localParticipant) return;
-    setMicOn(localParticipant.isMicrophoneEnabled);
-    setCamOn(localParticipant.isCameraEnabled);
-    setSharing(localParticipant.isScreenShareEnabled);
+    const sync = () => {
+      setMicOn(localParticipant.isMicrophoneEnabled);
+      setCamOn(localParticipant.isCameraEnabled);
+      setSharing(localParticipant.isScreenShareEnabled);
+    };
+    sync();
+    localParticipant.on(ParticipantEvent.LocalTrackPublished, sync);
+    localParticipant.on(ParticipantEvent.LocalTrackUnpublished, sync);
+    localParticipant.on(ParticipantEvent.TrackMuted, sync);
+    localParticipant.on(ParticipantEvent.TrackUnmuted, sync);
+    return () => {
+      localParticipant.off(ParticipantEvent.LocalTrackPublished, sync);
+      localParticipant.off(ParticipantEvent.LocalTrackUnpublished, sync);
+      localParticipant.off(ParticipantEvent.TrackMuted, sync);
+      localParticipant.off(ParticipantEvent.TrackUnmuted, sync);
+    };
   }, [localParticipant]);
 
   const toggleMic = async () => {
@@ -148,15 +163,27 @@ function RoomControls({ onLeave }: { onLeave?: () => void }) {
   };
 
   const toggleShare = async () => {
-    if (!localParticipant) return;
+    if (!localParticipant || shareBusy) return;
     const next = !sharing;
     if (next && typeof navigator !== "undefined" && !navigator.mediaDevices?.getDisplayMedia) {
       toast.error("This browser can't share a screen. Use desktop Chrome, Edge or Safari — mobile browsers don't support it.");
       return;
     }
+    if (next && window.self !== window.top) {
+      window.open(window.location.href, "_blank", "noopener");
+      toast.info("The room opened in its own tab. Press Share screen there to choose what to present.");
+      return;
+    }
+    setShareBusy(true);
     try {
-      await localParticipant.setScreenShareEnabled(next, { audio: true });
-      setSharing(next);
+      const publication = await localParticipant.setScreenShareEnabled(next, {
+        audio: false,
+        video: true,
+        contentHint: "detail",
+        surfaceSwitching: "include",
+      });
+      const active = next ? publication?.source === Track.Source.ScreenShare : false;
+      setSharing(active);
       if (next) toast.success("You're sharing your screen");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Screen share failed";
@@ -171,6 +198,8 @@ function RoomControls({ onLeave }: { onLeave?: () => void }) {
         toast.error(msg);
       }
       setSharing(localParticipant.isScreenShareEnabled);
+    } finally {
+      setShareBusy(false);
     }
   };
 
@@ -202,9 +231,10 @@ function RoomControls({ onLeave }: { onLeave?: () => void }) {
         variant="outline"
         className={`rounded-full ${sharing ? "border-transparent bg-primary text-primary-foreground hover:bg-primary/90" : "bg-background text-foreground"}`}
         onClick={toggleShare}
+        disabled={shareBusy}
       >
-        {sharing ? <MonitorX className="mr-1 h-3.5 w-3.5" /> : <MonitorUp className="mr-1 h-3.5 w-3.5" />}
-        {sharing ? "Stop sharing" : "Share screen"}
+        {shareBusy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : sharing ? <MonitorX className="mr-1 h-3.5 w-3.5" /> : <MonitorUp className="mr-1 h-3.5 w-3.5" />}
+        {shareBusy ? "Starting…" : sharing ? "Stop sharing" : "Share screen"}
       </Button>
 
       <Button size="sm" variant="destructive" className="ml-auto rounded-full" onClick={leave} disabled={leaving}>

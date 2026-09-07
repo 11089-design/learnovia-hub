@@ -94,6 +94,7 @@ export const getLiveKitToken = createServerFn({ method: "POST" })
       identity: userId,
       displayName: data.displayName,
       room: session.meeting_room_name,
+      canPublishSources: ["microphone", "camera", "screen_share", "screen_share_audio"],
     });
 
     return { configured: true as const, token, url: env.url, room: session.meeting_room_name, isTutor };
@@ -180,6 +181,7 @@ export const getBreakoutToken = createServerFn({ method: "POST" })
       identity: userId,
       displayName: data.displayName,
       room,
+      canPublishSources: ["microphone", "camera", "screen_share", "screen_share_audio"],
     });
     return { configured: true as const, token, url: env.url, room };
   });
