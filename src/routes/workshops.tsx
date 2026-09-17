@@ -6,6 +6,7 @@ import { Navbar } from "@/components/landing/Navbar";
 import { Footer } from "@/components/landing/Footer";
 import { Button } from "@/components/ui/button";
 import { CourseCard, type CourseListItem } from "@/components/CourseCard";
+import { isCourseOver } from "@/lib/session-time";
 
 export const Route = createFileRoute("/workshops")({
   head: () => ({
@@ -39,7 +40,7 @@ function WorkshopsPage() {
         setCourses((data ?? []).map((row) => {
           const days = (row as { course_days?: { count: number }[] }).course_days;
           return { ...(row as unknown as CourseListItem), day_count: days?.[0]?.count ?? 0 };
-        }));
+        }).filter((c) => !isCourseOver(c)));
         setLoading(false);
       });
     return () => { alive = false; };

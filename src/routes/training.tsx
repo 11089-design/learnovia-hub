@@ -57,10 +57,12 @@ function TrainingPage() {
       const { data } = await q;
       if (!alive) return;
       setCourses(
-        (data ?? []).map((row) => {
-          const days = (row as { course_days?: { count: number }[] }).course_days;
-          return { ...(row as unknown as CourseListItem), day_count: days?.[0]?.count ?? 0 };
-        }),
+        (data ?? [])
+          .map((row) => {
+            const days = (row as { course_days?: { count: number }[] }).course_days;
+            return { ...(row as unknown as CourseListItem), day_count: days?.[0]?.count ?? 0 };
+          })
+          .filter((c) => !isCourseOver(c)),
       );
       setLoading(false);
     })();

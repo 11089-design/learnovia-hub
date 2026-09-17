@@ -9,6 +9,7 @@ import {
   KIDS_MASCOTS, OwlMascot, ChickMascot, NumbersMascot, BookMascot, ClayMascot, BeakerMascot,
 } from "@/components/LearnovaMascots";
 import { CourseCard, type CourseListItem } from "@/components/CourseCard";
+import { isCourseOver } from "@/lib/session-time";
 
 export const Route = createFileRoute("/kids")({
   head: () => ({
@@ -63,7 +64,7 @@ function KidsPage() {
       setCourses((data ?? []).map((row) => {
         const days = (row as { course_days?: { count: number }[] }).course_days;
         return { ...(row as unknown as CourseListItem), day_count: days?.[0]?.count ?? 0 };
-      }));
+      }).filter((c) => !isCourseOver(c)));
       setLoading(false);
     })();
     return () => { alive = false; };
