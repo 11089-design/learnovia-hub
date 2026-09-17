@@ -53,7 +53,8 @@ function AuthPage() {
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        if (password.length < 6) throw new Error("Please use a password with at least 6 characters.");
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -62,10 +63,20 @@ function AuthPage() {
           },
         });
         if (error) throw error;
+        if (!data.session) {
+          toast.success("Account created — check your email to confirm, then sign in.");
+          setLoading(false);
+          return;
+        }
         toast.success("Welcome to Learnova!");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        if (error) {
+          if (error.message.toLowerCase().includes("invalid login")) {
+            throw new Error("That email and password don't match. If you're new, use Sign up first.");
+          }
+          throw error;
+        }
         toast.success("Signed in");
       }
       await redirectAfterAuth();
