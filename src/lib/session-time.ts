@@ -50,3 +50,18 @@ export function isReminderDue(s: SessionTimes, now: number = Date.now()): boolea
   return diff > 0 && diff <= REMINDER_WINDOW_MS;
 }
 
+
+/** Courses/workshops: hide once they've been conducted. */
+export type CourseTimes = {
+  status?: string | null;
+  starts_on?: string | null;
+  day_count?: number | null;
+};
+
+export function isCourseOver(c: CourseTimes, now: number = Date.now()): boolean {
+  if (c.status === "ended" || c.status === "cancelled") return true;
+  if (!c.starts_on) return false;
+  const days = Math.max(1, c.day_count ?? 1);
+  const end = new Date(c.starts_on + "T00:00:00").getTime() + days * 24 * 60 * 60 * 1000;
+  return end < now;
+}
