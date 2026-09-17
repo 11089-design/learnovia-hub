@@ -9,6 +9,7 @@ import { Navbar } from "@/components/landing/Navbar";
 import { Footer } from "@/components/landing/Footer";
 import { Button } from "@/components/ui/button";
 import { CourseCard, type CourseListItem } from "@/components/CourseCard";
+import { isCourseOver } from "@/lib/session-time";
 
 export const Route = createFileRoute("/training")({
   head: () => ({
