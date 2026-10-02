@@ -12,7 +12,7 @@ import {
 } from "@livekit/components-react";
 import {
   ParticipantEvent,
-  RemoteTrackPublication,
+  type RemoteTrackPublication,
   RoomEvent,
   ScreenSharePresets,
   Track,
