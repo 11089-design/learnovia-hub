@@ -173,6 +173,7 @@ export function RoomControls({ onLeave }: { onLeave?: () => void }) {
   const [shareAudio, setShareAudio] = useState(true);
   const [shareBusy, setShareBusy] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const canShare = typeof navigator !== "undefined" && !!navigator.mediaDevices?.getDisplayMedia;
 
   useEffect(() => {
     if (!localParticipant) return;
@@ -210,7 +211,7 @@ export function RoomControls({ onLeave }: { onLeave?: () => void }) {
     setCamOn(localParticipant.isCameraEnabled);
   };
 
-  const openFullTab = () => window.open(window.location.href, "_blank", "noopener");
+  const openFullTab = () => window.open(window.location.href, "_blank");
 
   const startShare = async (withAudio: boolean) =>
     localParticipant.setScreenShareEnabled(
@@ -230,6 +231,11 @@ export function RoomControls({ onLeave }: { onLeave?: () => void }) {
     );
 
   const toggleShare = async () => {
+    if (!sharing && isEmbedded()) {
+      window.open(window.location.href, "_blank");
+      toast.info("The room opened in its own tab. Press Share screen there to present.");
+      return;
+    }
     if (shareBusy) return;
     if (sharing) {
       setShareBusy(true);
@@ -242,8 +248,8 @@ export function RoomControls({ onLeave }: { onLeave?: () => void }) {
       return;
     }
 
-    if (!navigator.mediaDevices?.getDisplayMedia) {
-      toast.error("Screen sharing needs a desktop browser (Chrome, Edge, Firefox or Safari).");
+    if (!canShare) {
+      toast.info("Screen sharing needs a laptop or desktop browser. You can still watch others present.");
       return;
     }
 
@@ -272,27 +278,10 @@ export function RoomControls({ onLeave }: { onLeave?: () => void }) {
         );
       }
     } catch (err) {
-      const name = err instanceof Error ? err.name : "";
-      const msg = err instanceof Error ? err.message : "";
-      if (name === "AbortError" || /cancel|abort|dismiss/i.test(msg)) {
-        toast.info("Screen share cancelled.");
-      } else if (isEmbedded()) {
-        // The preview frame won't open the screen picker — continue in a full tab.
-        const w = openFullTab();
-        toast.info(
-          w
-            ? "Opened the room in its own tab — press Share screen there to present."
-            : "Open the room in its own tab to present your screen.",
-          { action: { label: "Open room", onClick: openFullTab }, duration: 10000 },
-        );
-      } else if (name === "NotAllowedError" || /permission|denied/i.test(msg)) {
-        toast.error(
-          "Screen sharing is blocked. Allow screen recording for your browser in your computer's privacy settings, then try again.",
-          { duration: 10000 },
-        );
-      } else {
-        toast.error(msg || "Screen share failed. Please try again.");
-      }
+      console.error("SCREEN SHARE ERROR:", err);
+      const name = err instanceof Error ? err.name : "UnknownError";
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error(`${name}: ${msg || "Screen share failed. Please try again."}`, { duration: 10000 });
       setSharing(localParticipant.isScreenShareEnabled);
     } finally {
       setShareBusy(false);
@@ -312,45 +301,51 @@ export function RoomControls({ onLeave }: { onLeave?: () => void }) {
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2 border-t border-border/50 bg-card/80 px-3 py-2 backdrop-blur">
-      <Button size="sm" variant={micOn ? "outline" : "secondary"} className="rounded-full" onClick={toggleMic}>
+    <div className="flex flex-wrap items-center gap-2 border-t border-border/50 bg-card/80 px-3 py-2 text-foreground backdrop-blur [color-scheme:light]">
+      <Button size="sm" variant={micOn ? "outline" : "secondary"} className="rounded-full text-foreground" onClick={toggleMic}>
         {micOn ? <Mic className="mr-1 h-3.5 w-3.5" /> : <MicOff className="mr-1 h-3.5 w-3.5 text-destructive" />}
         {micOn ? "Mic on" : "Mic off"}
       </Button>
-      <Button size="sm" variant={camOn ? "outline" : "secondary"} className="rounded-full" onClick={toggleCam}>
+      <Button size="sm" variant={camOn ? "outline" : "secondary"} className="rounded-full text-foreground" onClick={toggleCam}>
         {camOn ? <VideoIcon className="mr-1 h-3.5 w-3.5" /> : <VideoOff className="mr-1 h-3.5 w-3.5 text-destructive" />}
         {camOn ? "Camera on" : "Camera off"}
       </Button>
-      <div className="flex items-center">
-        <Button
-          size="sm"
-          variant={sharing ? "default" : "outline"}
-          className="rounded-l-full rounded-r-none"
-          onClick={toggleShare}
-          disabled={shareBusy}
-        >
-          {shareBusy ? (
-            <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
-          ) : sharing ? (
-            <MonitorX className="mr-1 h-3.5 w-3.5" />
-          ) : (
-            <MonitorUp className="mr-1 h-3.5 w-3.5" />
-          )}
-          {shareBusy ? "Starting…" : sharing ? "Stop sharing" : "Share screen"}
-        </Button>
-        <Button
-          size="sm"
-          variant={sharing ? "default" : "outline"}
-          className="rounded-l-none rounded-r-full border-l-0 px-2"
-          onClick={() => setShareAudio((v) => !v)}
-          disabled={sharing || shareBusy}
-          title={shareAudio ? "Share sound with screen: on" : "Share sound with screen: off"}
-          aria-label="Toggle sharing sound with your screen"
-        >
-          {shareAudio ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
-        </Button>
-      </div>
-      <Button size="sm" variant="destructive" className="ml-auto rounded-full" onClick={leave} disabled={leaving}>
+      {canShare ? (
+        <div className="flex items-center">
+          <Button
+            size="sm"
+            variant={sharing ? "default" : "outline"}
+            className="rounded-l-full rounded-r-none text-foreground"
+            onClick={toggleShare}
+            disabled={shareBusy}
+          >
+            {shareBusy ? (
+              <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+            ) : sharing ? (
+              <MonitorX className="mr-1 h-3.5 w-3.5" />
+            ) : (
+              <MonitorUp className="mr-1 h-3.5 w-3.5" />
+            )}
+            {shareBusy ? "Starting…" : sharing ? "Stop sharing" : "Share screen"}
+          </Button>
+          <Button
+            size="sm"
+            variant={sharing ? "default" : "outline"}
+            className="rounded-l-none rounded-r-full border-l-0 px-2 text-foreground"
+            onClick={() => setShareAudio((v) => !v)}
+            disabled={sharing || shareBusy}
+            title={shareAudio ? "Share sound with screen: on" : "Share sound with screen: off"}
+            aria-label="Toggle sharing sound with your screen"
+          >
+            {shareAudio ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+          </Button>
+        </div>
+      ) : (
+        <span className="text-xs text-muted-foreground">
+          Screen sharing needs a laptop or desktop browser. You can still watch others present.
+        </span>
+      )}
+      <Button size="sm" variant="destructive" className="ml-auto rounded-full text-foreground" onClick={leave} disabled={leaving}>
         {leaving ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <PhoneOff className="mr-1 h-3.5 w-3.5" />}
         Leave
       </Button>
