@@ -344,9 +344,6 @@ export function SessionRoom({
               <div className="min-h-[180px] flex-1 overflow-hidden">
                 <LiveCaptions
                   sessionId={session.id}
-                  userId={currentUserId}
-                  displayName={effectiveDisplayName}
-                  startedAt={extras.started_at}
                 />
               </div>
               <div className="min-h-[200px] flex-1 overflow-hidden">
