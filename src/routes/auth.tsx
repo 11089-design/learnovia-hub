@@ -24,6 +24,8 @@ function AuthPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(false);
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
+  const [signInEmail, setSignInEmail] = useState("");
 
   // If already signed in, bounce to dashboard
   useEffect(() => {
@@ -107,6 +109,26 @@ function AuthPage() {
     }
   };
 
+  const handleForgotPassword = async () => {
+    const email = signInEmail.trim();
+    if (!email) {
+      toast.error("Enter your email first, then choose Forgot password.");
+      return;
+    }
+    setForgotPasswordLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      toast.success("If an account exists for that email, a password reset link is on its way.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't send a password reset link.");
+    } finally {
+      setForgotPasswordLoading(false);
+    }
+  };
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
       {/* Decorative blobs */}
@@ -135,7 +157,7 @@ function AuthPage() {
               <form onSubmit={(e) => handleEmailAuth(e, "signin")} className="mt-6 space-y-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="signin-email">Email</Label>
-                  <Input id="signin-email" name="email" type="email" required autoComplete="email" />
+                  <Input id="signin-email" name="email" type="email" required autoComplete="email" value={signInEmail} onChange={(event) => setSignInEmail(event.target.value)} />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="signin-password">Password</Label>
@@ -143,6 +165,15 @@ function AuthPage() {
                 </div>
                 <Button type="submit" disabled={loading} className="w-full rounded-full bg-brand-gradient text-white shadow-soft hover:opacity-95">
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sign in"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="link"
+                  className="h-auto w-full p-0 text-sm"
+                  onClick={handleForgotPassword}
+                  disabled={forgotPasswordLoading}
+                >
+                  {forgotPasswordLoading ? "Sending reset link…" : "Forgot password?"}
                 </Button>
               </form>
             </TabsContent>

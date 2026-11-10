@@ -211,14 +211,11 @@ export function RoomControls({ onLeave }: { onLeave?: () => void }) {
     setCamOn(localParticipant.isCameraEnabled);
   };
 
-  const openFullTab = () => window.open(window.location.href, "_blank");
-
   const startShare = async (withAudio: boolean) =>
     localParticipant.setScreenShareEnabled(
       true,
       {
         audio: withAudio,
-        video: { displaySurface: "monitor" },
         contentHint: "text",
         selfBrowserSurface: "exclude",
         surfaceSwitching: "include",
