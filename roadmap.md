@@ -1,5 +1,14 @@
 # Learnova roadmap
 
+## In progress (current request)
+- [ ] Remove the sparkle/Intel tab from the session room and add a heart reaction.
+- [ ] Record completed teaching/workshop hours as pending until staff verify them.
+- [ ] Add admin review, impact milestones, activity submissions, achievement badges, and dashboard certificates.
+- [ ] Generate downloadable PDF certificates with QR verification and founder signature.
+- [ ] Verify the class completion, review, certificate, and QR flow; run impact milestone tests.
+
+## Earlier follow-ups
+
 ## In progress (this turn)
 - [ ] Consistent minimal top navbar across every route (single `SiteHeader`, 3 grouped menus + mobile sheet)
 - [ ] Theme persistence without flash (inline pre-hydration script)
