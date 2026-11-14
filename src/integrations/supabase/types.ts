@@ -681,6 +681,54 @@ export type Database = {
           },
         ]
       }
+      impact_certificates: {
+        Row: {
+          certificate_title: string
+          contribution_end: string | null
+          contribution_start: string | null
+          display_name: string
+          id: string
+          issued_at: string
+          learners_supported: number
+          level_title: string
+          milestone_hours: number
+          subjects: string[]
+          user_id: string
+          verification_code: string
+          verified_hours: number
+        }
+        Insert: {
+          certificate_title: string
+          contribution_end?: string | null
+          contribution_start?: string | null
+          display_name: string
+          id?: string
+          issued_at?: string
+          learners_supported?: number
+          level_title: string
+          milestone_hours: number
+          subjects?: string[]
+          user_id: string
+          verification_code?: string
+          verified_hours: number
+        }
+        Update: {
+          certificate_title?: string
+          contribution_end?: string | null
+          contribution_start?: string | null
+          display_name?: string
+          id?: string
+          issued_at?: string
+          learners_supported?: number
+          level_title?: string
+          milestone_hours?: number
+          subjects?: string[]
+          user_id?: string
+          verification_code?: string
+          verified_hours?: number
+        }
+        Relationships: []
+      }
       message_reactions: {
         Row: {
           created_at: string
@@ -1589,12 +1637,121 @@ export type Database = {
         }
         Relationships: []
       }
+      volunteer_contributions: {
+        Row: {
+          activity_kind: string
+          claimed_countries: string[]
+          claimed_learners: number
+          created_at: string
+          description: string
+          ended_at: string | null
+          id: string
+          requested_hours: number
+          review_note: string | null
+          reviewed_at: string | null
+          reviewer_id: string | null
+          source_session_id: string | null
+          started_at: string | null
+          status: string
+          subject: string
+          title: string
+          user_id: string
+          verified_countries: string[]
+          verified_hours: number
+          verified_learners: number
+        }
+        Insert: {
+          activity_kind: string
+          claimed_countries?: string[]
+          claimed_learners?: number
+          created_at?: string
+          description: string
+          ended_at?: string | null
+          id?: string
+          requested_hours: number
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          source_session_id?: string | null
+          started_at?: string | null
+          status?: string
+          subject?: string
+          title: string
+          user_id: string
+          verified_countries?: string[]
+          verified_hours?: number
+          verified_learners?: number
+        }
+        Update: {
+          activity_kind?: string
+          claimed_countries?: string[]
+          claimed_learners?: number
+          created_at?: string
+          description?: string
+          ended_at?: string | null
+          id?: string
+          requested_hours?: number
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          source_session_id?: string | null
+          started_at?: string | null
+          status?: string
+          subject?: string
+          title?: string
+          user_id?: string
+          verified_countries?: string[]
+          verified_hours?: number
+          verified_learners?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "volunteer_contributions_source_session_id_fkey"
+            columns: ["source_session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      finish_teaching_session: {
+        Args: { _session_id: string }
+        Returns: string
+      }
+      review_volunteer_contribution: {
+        Args: {
+          _contribution_id: string
+          _countries: string[]
+          _decision: string
+          _review_note?: string
+          _subject: string
+          _verified_hours: number
+          _verified_learners: number
+        }
+        Returns: number
+      }
+      verify_impact_certificate: {
+        Args: { _verification_code: string }
+        Returns: {
+          certificate_title: string
+          contribution_end: string
+          contribution_start: string
+          display_name: string
+          founder_signature: string
+          issued_at: string
+          issuer_name: string
+          learners_supported: number
+          level_title: string
+          subjects: string[]
+          verification_code: string
+          verified_hours: number
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "tutor" | "learner"
